@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Prism Space</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
@@ -650,6 +651,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Forms
       </div>
+      <div class="sb-item" onclick="switchChannel('responses',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Responses
+      </div>
       <div class="sb-item" onclick="switchChannel('sessions',this)">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Session Management
@@ -805,6 +810,15 @@
         </div>
         <div id="formsList"></div>
         <div id="formsListNoAcc" style="display:none;"></div>
+      </div>
+
+      <!-- RESPONSES -->
+      <div id="ch-responses" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">📬 Form Responses</div>
+          <div class="ch-desc">View submissions from your public forms</div>
+        </div>
+        <div id="responsesList" style="display:flex;flex-direction:column;gap:14px;max-width:700px;"></div>
       </div>
 
       <!-- FORM EDITOR -->
@@ -1089,6 +1103,113 @@
 </style>
 
 <script>
+  // ── Supabase Setup ──
+  const SUPABASE_URL = 'https://xzyqwkqaqtfwxalnqckb.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Oce6lAv7FY-7thaFiQ-fFw_B3mBS26u';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Initialize Supabase tables (run once)
+  async function initSupabaseTables() {
+    // Create tables if they don't exist using raw SQL
+    const tables = [
+      `CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'Member',
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS workspaces (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        owner_email TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS roles (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL,
+        permissions TEXT[] DEFAULT '{}',
+        workspace_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS forms (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        visibility TEXT DEFAULT 'Private',
+        workspace_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS form_questions (
+        id TEXT PRIMARY KEY,
+        form_id TEXT NOT NULL,
+        question_text TEXT NOT NULL,
+        question_type TEXT NOT NULL,
+        options TEXT[] DEFAULT '{}',
+        sort_order INTEGER DEFAULT 0
+      )`,
+      `CREATE TABLE IF NOT EXISTS staff (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        rank TEXT NOT NULL,
+        workspace_id TEXT NOT NULL,
+        status TEXT DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        host TEXT NOT NULL,
+        status TEXT DEFAULT 'live',
+        workspace_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS attendance_sheets (
+        id TEXT PRIMARY KEY,
+        meeting_name TEXT NOT NULL,
+        meeting_date TEXT NOT NULL,
+        workspace_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS attendance_records (
+        id TEXT PRIMARY KEY,
+        sheet_id TEXT NOT NULL,
+        username TEXT NOT NULL,
+        status TEXT NOT NULL
+      )`
+    ];
+
+    for (const sql of tables) {
+      try {
+        await supabase.rpc('exec_sql', { query: sql }).catch(() => {
+          // If RPC doesn't work, try direct insert to trigger table creation
+          return supabase.from('accounts').select('id').limit(1);
+        });
+      } catch(e) { console.log('Table init error (may be ok):', e); }
+    }
+  }
+
+  // Helper: Save to Supabase
+  async function sbSave(table, data) {
+    const { error } = await supabase.from(table).upsert(data);
+    if(error) console.error('Supabase save error:', error);
+    return !error;
+  }
+
+  // Helper: Load from Supabase
+  async function sbLoad(table, filter) {
+    let query = supabase.from(table).select('*');
+    if(filter) {
+      for(const [key, val] of Object.entries(filter)) {
+        query = query.eq(key, val);
+      }
+    }
+    const { data, error } = await query;
+    if(error) console.error('Supabase load error:', error);
+    return data || [];
+  }
+
   // ── Auth ──
   let psAccounts = JSON.parse(localStorage.getItem('ps_accounts') || '[]');
   let psCurrentUser = JSON.parse(localStorage.getItem('ps_current_user') || 'null');
@@ -1455,6 +1576,51 @@
   // ── Forms ──
   // ── Forms data store ──
   let formsData = JSON.parse(localStorage.getItem('ps_forms') || '{}');
+  let formResponses = JSON.parse(localStorage.getItem('ps_form_responses') || '[]');
+
+  function renderResponses() {
+    const el = document.getElementById('responsesList');
+    if(!el) return;
+    if(formResponses.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:13px;">No form submissions yet.</div>';
+      return;
+    }
+    // Group by form
+    const byForm = {};
+    formResponses.forEach(r => {
+      if(!byForm[r.formId]) byForm[r.formId] = [];
+      byForm[r.formId].push(r);
+    });
+    el.innerHTML = Object.entries(byForm).map(([formId, reps]) => {
+      const form = formsData[formId];
+      const formName = form ? form.name : 'Unknown Form';
+      const rows = reps.map((r, i) => `
+        <div style="background:#0f0f0f;border:1px solid #1e1e1e;border-radius:8px;padding:12px;margin-top:8px;">
+          <div style="font-size:11px;color:#555;margin-bottom:8px;">${new Date(r.submittedAt).toLocaleString()}</div>
+          ${Object.entries(r.answers).map(([qIdx, ans]) => {
+            const q = form?.questions[qIdx];
+            const qText = q ? q.text : `Question ${parseInt(qIdx)+1}`;
+            return `<div style="margin-bottom:6px;"><div style="font-size:11px;color:#888;">${escHtml(qText)}</div><div style="font-size:13px;">${escHtml(String(ans))}</div></div>`;
+          }).join('')}
+        </div>`).join('');
+      return `<div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;">${escHtml(formName)}</div>
+        <div style="font-size:12px;color:#555;">${reps.length} submission${reps.length!==1?'s':''}</div>
+        ${rows}
+      </div>`;
+    }).join('');
+  }
+
+  function switchChannel(name, el) {
+    document.querySelectorAll('.channel-view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+    document.getElementById('ch-' + name).classList.add('active');
+    el.classList.add('active');
+    // Refresh data when switching channels
+    if(name === 'forms' || name === 'responses') renderAllForms();
+    if(name === 'responses') renderResponses();
+    if(name === 'attendance') renderAttendanceSheets();
+  }
 
   // Always load formsData from localStorage on init (for public form links)
   (function loadForms() {
@@ -1521,15 +1687,7 @@
     });
   }
 
-  // Load form data from hash on page load
-  (function checkHash() {
-    const hash = window.location.hash;
-    if(hash.startsWith('#form=')) {
-      const formId = hash.replace('#form=', '');
-      showPublicForm(formId);
-    }
-  })();
-
+  // Public form rendering (called from init if hash is present)
   function showPublicForm(id) {
     const form = formsData[id];
     if(!form) {
@@ -1564,6 +1722,29 @@
   }
 
   function submitPublicForm() {
+    const formId = window.location.hash.replace('#form=', '');
+    const form = formsData[formId];
+    if(!form) return;
+    const answers = {};
+    form.questions.forEach((q, i) => {
+      if(q.type === 'short' || q.type === 'paragraph') {
+        answers[i] = document.getElementById('pub_a_'+i)?.value || '';
+      } else if(q.type === 'multiple') {
+        const selected = document.querySelector(`input[name="pub_q_${i}"]:checked`);
+        answers[i] = selected ? selected.value : '';
+      } else if(q.type === 'checkbox') {
+        const checked = document.querySelectorAll(`input[name="pub_q_${i}"]:checked`);
+        answers[i] = Array.from(checked).map(c => c.value);
+      }
+    });
+    const response = {
+      id: 'resp_' + Date.now(),
+      formId,
+      answers,
+      submittedAt: new Date().toISOString()
+    };
+    formResponses.push(response);
+    localStorage.setItem('ps_form_responses', JSON.stringify(formResponses));
     document.getElementById('pubFormContent').style.display = 'none';
     document.getElementById('pubFormSuccess').style.display = 'block';
     showToast('Form submitted!');
@@ -2053,6 +2234,8 @@
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('publicFormPage').classList.add('active');
     document.getElementById('nav').style.display = 'none'; // Hide nav for public forms
+    const formId = initHash.replace('#form=', '');
+    showPublicForm(formId); // Load the form
   } else if(psCurrentUser) {
     document.getElementById('navAccount').textContent = psCurrentUser.name;
     document.getElementById('navStaffDash').style.display =
