@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prism Space</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 60px; background: #0a0a0a;
+      border-bottom: 1px solid #1e1e1e; position: sticky; top: 0; z-index: 200;
+    }
+    .nav-left { display: flex; align-items: center; gap: 36px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; color: #fff; text-decoration: none; cursor: pointer; }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a, .nav-right a { color: #aaa; text-decoration: none; font-size: 14px; transition: color 0.15s; }
+    .nav-links a:hover, .nav-right a:hover { color: #fff; }
+    .nav-right { display: flex; align-items: center; gap: 28px; list-style: none; }
+
+    /* ── PAGES ── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── LANDING ── */
+    .hero {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+      padding: 100px 160px 60px; max-width: 1400px; margin: 0 auto;
+    }
+    .hero-left h1 { font-size: 52px; font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+    .hero-left h1 .accent { color: #3ddc84; }
+    .hero-right { display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+    .hero-right p { font-size: 15.5px; line-height: 1.7; color: #aaa; }
+    .hero-right p strong { color: #3ddc84; font-weight: 700; }
+    .btn-open {
+      display: inline-block; background: transparent; color: #fff;
+      border: 1.5px solid #444; border-radius: 999px; padding: 13px 30px;
+      font-size: 15px; font-weight: 600; cursor: pointer; width: fit-content;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-open:hover { border-color: #3ddc84; background: rgba(61,220,132,0.07); }
+
+    /* feature cards */
+    .features {
+      padding: 20px 60px 80px; display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 20px; max-width: 1400px; margin: 0 auto;
+    }
+    .card { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
+    .card-screen { width: 100%; height: 240px; background: #161616; overflow: hidden; position: relative; }
+    .fake-ui { position: absolute; inset: 0; display: flex; }
+    .fake-sidebar { width: 110px; background: #0f0f0f; border-right: 1px solid #1e1e1e; padding: 10px 0; flex-shrink: 0; }
+    .fake-sb-item { padding: 5px 10px; font-size: 8.5px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .fake-sb-item.active { color: #3ddc84; background: rgba(61,220,132,0.08); }
+    .fake-sb-item svg { width: 10px; height: 10px; flex-shrink: 0; }
+    .fake-main { flex: 1; padding: 12px; overflow: hidden; }
+    .fake-topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .fake-title { font-size: 11px; font-weight: 700; color: #eee; }
+    .fake-subtitle { font-size: 7.5px; color: #555; margin-top: 2px; }
+    .fake-gbtn { background: #3ddc84; color: #000; font-size: 7.5px; font-weight: 700; padding: 4px 8px; border-radius: 5px; white-space: nowrap; }
+    .fake-card { background: #1a1a1a; border: 1px solid #252525; border-radius: 7px; padding: 9px; margin-top: 7px; }
+    .fake-card-icon { width: 24px; height: 24px; background: rgba(61,220,132,0.15); border-radius: 5px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; color: #3ddc84; font-size: 11px; }
+    .fake-card-title { font-size: 9px; color: #ccc; font-weight: 600; }
+    .fake-card-desc { font-size: 7px; color: #555; margin-top: 2px; }
+    .fake-tag { display: inline-block; font-size: 7px; padding: 2px 5px; border-radius: 3px; }
+    .fake-tag.green { background: rgba(61,220,132,0.18); color: #3ddc84; }
+    .fake-tag.gray  { background: #222; color: #777; }
+    .fake-row { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+    .fake-action { font-size: 7px; color: #888; padding: 3px 6px; border: 1px solid #2a2a2a; border-radius: 4px; }
+    .fake-input { background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 5px; height: 18px; margin-top: 4px; }
+    .fake-label { font-size: 7px; color: #666; margin-top: 5px; }
+    .card-footer { padding: 16px 18px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #1e1e1e; }
+    .card-footer-icon { width: 28px; height: 28px; border-radius: 7px; background: rgba(61,220,132,0.12); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #3ddc84; flex-shrink: 0; }
+    .card-footer-text { font-size: 13.5px; font-weight: 600; }
+    .card-footer-arrow { margin-left: auto; color: #555; font-size: 18px; }
+
+    /* ── WORKSPACE PICKER ── */
+    #wsPickerPage { display: none !important; }
+    #wsPickerPage.active { display: block !important; min-height: calc(100vh - 60px); }
+    .ws-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 24px; }
+    .ws-picker-card {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 22px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s; position: relative;
+    }
+    .ws-picker-card:hover { border-color: #3ddc84; background: rgba(61,220,132,0.03); }
+    .ws-picker-card-icon { font-size: 28px; margin-bottom: 10px; }
+    .ws-picker-card-name { font-size: 16px; font-weight: 700; }
+    .ws-picker-card-meta { font-size: 12px; color: #666; margin-top: 4px; }
+    .ws-picker-new {
+      background: transparent; border: 1.5px dashed #2a2a2a; border-radius: 12px; padding: 22px;
+      cursor: pointer; transition: border-color 0.15s; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px; color: #555; min-height: 110px;
+    }
+    .ws-picker-new:hover { border-color: #3ddc84; color: #3ddc84; }
+    /* Staff Dashboard */
+    #staffDashPage { display: none !important; }
+    #staffDashPage.active { display: block !important; min-height: calc(100vh - 60px); }
+    /* ── WORKSPACE PAGE ── */
+    #wsPage { display: none !important; }
+    #wsPage.active { display: flex !important; flex-direction: column; height: calc(100vh - 60px); }
+    #authPage { display: none !important; }
+    #authPage.active { display: flex !important; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
+
+    /* workspace selector bar */
+    .ws-bar {
+      background: #0d0d0d; border-bottom: 1px solid #1e1e1e;
+      padding: 0 24px; display: flex; align-items: center; gap: 14px; height: 50px;
+    }
+    .ws-bar-label { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; }
+    .ws-tab {
+      background: #161616; border: 1px solid #252525; border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; color: #ccc; cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .ws-tab:hover { border-color: #3ddc84; color: #fff; }
+    .ws-tab.selected { border-color: #3ddc84; color: #3ddc84; background: rgba(61,220,132,0.07); }
+    .ws-tab .ws-dot { width: 8px; height: 8px; background: #3ddc84; border-radius: 50%; }
+    .ws-add {
+      background: transparent; border: 1px dashed #2a2a2a; border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; color: #555; cursor: pointer; transition: all 0.15s;
+    }
+    .ws-add:hover { border-color: #3ddc84; color: #3ddc84; }
+
+    /* main area */
+    .ws-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* sidebar */
+    .sidebar {
+      width: 200px; background: #0d0d0d; border-right: 1px solid #1e1e1e;
+      display: flex; flex-direction: column; padding: 16px 0; flex-shrink: 0; overflow-y: auto;
+    }
+    .sidebar-section { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.1em; padding: 12px 16px 5px; }
+    .sb-item {
+      display: flex; align-items: center; gap: 10px; padding: 8px 16px;
+      font-size: 13.5px; color: #888; cursor: pointer; transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .sb-item:hover { color: #ccc; background: rgba(255,255,255,0.03); }
+    .sb-item.active { color: #3ddc84; background: rgba(61,220,132,0.07); border-left-color: #3ddc84; }
+    .sb-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* content area */
+    .ws-content { flex: 1; overflow-y: auto; padding: 32px 40px; background: #0a0a0a; }
+
+    /* channel views */
+    .channel-view { display: none; }
+    .channel-view.active { display: block; }
+
+    /* shared styles */
+    .ch-header { margin-bottom: 28px; }
+    .ch-title { font-size: 22px; font-weight: 700; }
+    .ch-desc { font-size: 13.5px; color: #666; margin-top: 4px; }
+    .ch-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .btn-primary {
+      background: #3ddc84; color: #000; border: none; border-radius: 8px;
+      padding: 9px 18px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-secondary {
+      background: transparent; color: #ccc; border: 1px solid #2a2a2a; border-radius: 8px;
+      padding: 9px 18px; font-size: 13.5px; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: #555; color: #fff; }
+    .btn-danger {
+      background: transparent; color: #e05555; border: 1px solid #3a1818; border-radius: 8px;
+      padding: 9px 18px; font-size: 13.5px; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-danger:hover { background: rgba(224,85,85,0.1); }
+
+    /* cards grid */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .doc-card {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 16px;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .doc-card:hover { border-color: #3ddc84; }
+    .doc-card-icon { font-size: 22px; margin-bottom: 10px; }
+    .doc-card-title { font-size: 14px; font-weight: 600; }
+    .doc-card-meta { font-size: 12px; color: #555; margin-top: 4px; }
+    .doc-card-desc { font-size: 12.5px; color: #777; margin-top: 6px; }
+
+    /* form items */
+    .form-item {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 16px;
+      display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;
+    }
+    .form-item-left { display: flex; flex-direction: column; gap: 6px; }
+    .form-item-name { font-size: 15px; font-weight: 600; }
+    .form-item-tags { display: flex; gap: 6px; }
+    .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .tag.green { background: rgba(61,220,132,0.18); color: #3ddc84; }
+    .tag.gray  { background: #1e1e1e; color: #777; border: 1px solid #2a2a2a; }
+    .tag.red   { background: rgba(224,85,85,0.15); color: #e05555; }
+    .form-item-meta { font-size: 12px; color: #555; }
+    .form-item-actions { display: flex; gap: 6px; align-items: center; }
+    .icon-btn {
+      background: #161616; border: 1px solid #252525; border-radius: 7px;
+      padding: 6px 10px; font-size: 12px; color: #aaa; cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .icon-btn:hover { border-color: #3ddc84; color: #3ddc84; }
+    .icon-btn.danger:hover { border-color: #e05555; color: #e05555; }
+
+    /* moderation */
+    .mod-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .mod-tab {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 8px;
+      padding: 8px 16px; font-size: 13px; color: #777; cursor: pointer; transition: all 0.15s;
+    }
+    .mod-tab.active, .mod-tab:hover { border-color: #3ddc84; color: #3ddc84; background: rgba(61,220,132,0.07); }
+    .mod-panel { display: none; }
+    .mod-panel.active { display: block; }
+    label.field-label { display: block; font-size: 12px; color: #777; margin-bottom: 5px; }
+    input.field-input, select.field-input, textarea.field-input {
+      width: 100%; background: #111; border: 1px solid #252525; border-radius: 8px;
+      padding: 9px 12px; font-size: 13.5px; color: #fff; outline: none; transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    input.field-input:focus, select.field-input:focus, textarea.field-input:focus { border-color: #3ddc84; }
+    select.field-input option { background: #111; }
+    .field-group { margin-bottom: 14px; }
+    .mod-form { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 22px; max-width: 500px; }
+    .mod-form-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .ban-list { margin-top: 20px; }
+    .ban-row {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+    }
+    .ban-user { font-size: 14px; font-weight: 600; }
+    .ban-reason { font-size: 12px; color: #777; margin-top: 2px; }
+    .ban-dur { font-size: 12px; color: #aaa; }
+    .unban-btn {
+      background: transparent; border: 1px solid #3a1818; color: #e05555;
+      border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .unban-btn:hover { background: rgba(224,85,85,0.1); }
+
+    /* staff mgmt */
+    .staff-table { width: 100%; border-collapse: collapse; }
+    .staff-table th { text-align: left; padding: 10px 14px; font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid #1e1e1e; }
+    .staff-table td { padding: 12px 14px; font-size: 13.5px; border-bottom: 1px solid #141414; }
+    .staff-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .rank-pill { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(61,220,132,0.12); color: #3ddc84; font-weight: 600; }
+
+    /* activity */
+    .activity-list { display: flex; flex-direction: column; gap: 10px; }
+    .activity-row {
+      background: #111; border: 1px solid #1e1e1e; border-radius: 9px; padding: 13px 16px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .act-icon { width: 34px; height: 34px; border-radius: 8px; background: rgba(61,220,132,0.12); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .act-text { font-size: 13.5px; }
+    .act-user { font-weight: 600; color: #3ddc84; }
+    .act-time { margin-left: auto; font-size: 11.5px; color: #555; }
+
+    /* session mgmt */
+    .session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap: 14px; }
+    .session-card { background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 16px; }
+    .session-status { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; display: inline-block; margin-bottom: 8px; }
+    .session-status.live { background: rgba(61,220,132,0.15); color: #3ddc84; }
+    .session-status.ended { background: #1e1e1e; color: #666; }
+    .session-name { font-size: 15px; font-weight: 600; }
+    .session-meta { font-size: 12px; color: #666; margin-top: 4px; }
+
+    /* home */
+    .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap: 14px; margin-top: 24px; }
+    .stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 18px; }
+    .stat-label { font-size: 12px; color: #666; }
+    .stat-value { font-size: 28px; font-weight: 800; color: #3ddc84; margin-top: 4px; }
+    .stat-sub { font-size: 12px; color: #555; margin-top: 2px; }
+
+    /* messages */
+    .msg-layout { display: flex; gap: 0; height: 100%; }
+    .msg-channels { width: 180px; border-right: 1px solid #1e1e1e; padding: 12px 0; flex-shrink: 0; }
+    .msg-ch { padding: 8px 14px; font-size: 13px; color: #777; cursor: pointer; border-radius: 6px; margin: 2px 6px; display: flex; align-items: center; gap: 7px; }
+    .msg-ch:hover, .msg-ch.active { background: rgba(61,220,132,0.07); color: #3ddc84; }
+    .msg-area { flex: 1; display: flex; flex-direction: column; }
+    .msg-thread { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .msg-bubble { display: flex; gap: 10px; }
+    .msg-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1e1e1e; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #3ddc84; flex-shrink: 0; }
+    .msg-content { background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 10px 14px; max-width: 480px; }
+    .msg-sender { font-size: 12px; color: #3ddc84; font-weight: 700; }
+    .msg-text { font-size: 13.5px; color: #ccc; margin-top: 2px; }
+    .msg-time { font-size: 10.5px; color: #444; margin-top: 3px; }
+    .msg-input-row { padding: 12px 16px; border-top: 1px solid #1e1e1e; display: flex; gap: 10px; }
+    .msg-input { flex: 1; background: #111; border: 1px solid #252525; border-radius: 8px; padding: 9px 13px; font-size: 13.5px; color: #fff; outline: none; font-family: inherit; }
+    .msg-input:focus { border-color: #3ddc84; }
+    .msg-send { background: #3ddc84; color: #000; border: none; border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+    /* modal */
+    .modal-bg {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 500; align-items: center; justify-content: center;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: #111; border: 1px solid #252525; border-radius: 14px;
+      padding: 28px; width: 420px; max-width: 95vw;
+    }
+    .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* toast */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #3ddc84; color: #000; font-weight: 700; font-size: 13.5px;
+      padding: 11px 22px; border-radius: 999px; z-index: 1000;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    #toast.show { opacity: 1; }
+
+    /* app store */
+    .app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+    .app-card { background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 18px; }
+    .app-icon { font-size: 26px; margin-bottom: 10px; }
+    .app-name { font-size: 14.5px; font-weight: 700; }
+    .app-desc { font-size: 12px; color: #666; margin-top: 4px; }
+    .app-btn { margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-left">
+    <a class="logo" onclick="showPage('landing')">
+      <svg viewBox="0 0 40 40" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="20,4 36,34 4,34" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+      </svg>
+      Prism Space
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">Product ▾</a></li>
+      <li><a href="#">Prism+</a></li>
+      <li><a href="#">Support</a></li>
+    </ul>
+  </div>
+    <ul class="nav-right" id="navRight">
+      <li><a href="#" onclick="showPage('wsPicker');return false;">Workspaces</a></li>
+      <li id="navStaffDash" style="display:none;"><a href="#" onclick="showPage('staffDash');return false;" style="color:#3ddc84;">Staff Dashboard</a></li>
+      <li><a href="#" id="navAccount">Account</a></li>
+      <li><a href="#" onclick="signOut();return false;">Sign Out</a></li>
+    </ul>
+</nav>
+
+<!-- ══════════ WORKSPACE PICKER PAGE ══════════ -->
+<div id="wsPickerPage" class="page">
+  <div style="max-width:1100px;margin:0 auto;padding:48px 48px 80px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div>
+        <div style="font-size:26px;font-weight:800;">Your Workspaces</div>
+        <div style="font-size:14px;color:#666;margin-top:4px;">Select a workspace to open or create a new one</div>
+      </div>
+    </div>
+    <div class="ws-picker-grid" id="wsPickerGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════ STAFF DASHBOARD PAGE ══════════ -->
+<div id="staffDashPage" class="page">
+  <div style="max-width:1100px;margin:0 auto;padding:48px 48px 80px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+      <div>
+        <div style="font-size:26px;font-weight:800;">Staff Dashboard</div>
+        <div style="font-size:14px;color:#666;margin-top:4px;">Admin view — all workspaces across the platform</div>
+      </div>
+      <span style="font-size:11px;background:rgba(61,220,132,0.12);color:#3ddc84;border-radius:6px;padding:4px 10px;font-weight:700;">ADMIN</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:32px;" id="dashStatCards">
+      <div class="stat-card"><div class="stat-label">Total Workspaces</div><div class="stat-value" id="dashTotalWs">0</div></div>
+      <div class="stat-card"><div class="stat-label">Total Accounts</div><div class="stat-value" id="dashTotalAccounts">0</div></div>
+      <div class="stat-card"><div class="stat-label">Total Roles</div><div class="stat-value" id="dashTotalRoles">0</div></div>
+    </div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;">All Workspaces</div>
+    <div id="dashWsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="font-size:16px;font-weight:700;margin:28px 0 14px;">Registered Accounts</div>
+    <div id="dashAccountsList" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ AUTH PAGE ══════════ -->
+<div id="authPage" class="page active">
+  <div style="width:400px;max-width:95vw;">
+    <!-- Login -->
+    <div id="loginForm">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:36px;margin-bottom:8px;">
+          <svg viewBox="0 0 40 40" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:8px;">
+            <polygon points="20,4 36,34 4,34" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div style="font-size:24px;font-weight:800;">Sign in to Prism Space</div>
+        <div style="font-size:13.5px;color:#666;margin-top:5px;">Manage your Roblox HRM workspace</div>
+      </div>
+      <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:28px;">
+        <div class="field-group"><label class="field-label">Email</label><input class="field-input" id="loginEmail" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <div class="field-group"><label class="field-label">Password</label><input class="field-input" id="loginPassword" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <div id="loginError" style="color:#e05555;font-size:12.5px;margin-bottom:10px;display:none;"></div>
+        <button class="btn-primary" style="width:100%;text-align:center;padding:11px;" onclick="doLogin()">Sign In</button>
+        <div style="text-align:center;margin-top:18px;font-size:13px;color:#666;">
+          Don't have an account? <a href="#" onclick="showAuthTab('signup');return false;" style="color:#3ddc84;text-decoration:none;font-weight:600;">Create one</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signup -->
+    <div id="signupForm" style="display:none;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:24px;font-weight:800;">Create your account</div>
+        <div style="font-size:13.5px;color:#666;margin-top:5px;">Join Prism Space today</div>
+      </div>
+      <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:28px;">
+        <div class="field-group"><label class="field-label">Display Name</label><input class="field-input" id="signupName" placeholder="Your name"/></div>
+        <div class="field-group"><label class="field-label">Email</label><input class="field-input" id="signupEmail" type="email" placeholder="you@example.com"/></div>
+        <div class="field-group"><label class="field-label">Password</label><input class="field-input" id="signupPassword" type="password" placeholder="At least 6 characters"/></div>
+        <div class="field-group"><label class="field-label">Confirm Password</label><input class="field-input" id="signupConfirm" type="password" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doSignup()"/></div>
+        <div id="signupError" style="color:#e05555;font-size:12.5px;margin-bottom:10px;display:none;"></div>
+        <button class="btn-primary" style="width:100%;text-align:center;padding:11px;" onclick="doSignup()">Create Account</button>
+        <div style="text-align:center;margin-top:18px;font-size:13px;color:#666;">
+          Already have an account? <a href="#" onclick="showAuthTab('login');return false;" style="color:#3ddc84;text-decoration:none;font-weight:600;">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LANDING PAGE ══════════ -->
+<div id="landingPage" class="page">
+  <section class="hero">
+    <div class="hero-left">
+      <h1>The <span class="accent">all-in-one</span> platform for Roblox HRM</h1>
+    </div>
+    <div class="hero-right">
+      <p>
+        <strong>Prism Space</strong> is the platform for innovating Roblox
+        communities — auto-rank staff from an advanced logbook,
+        track live activity, manage your departments, and more
+      </p>
+      <button class="btn-open" onclick="showPage('wsPicker')">Open Workspaces</button>
+    </div>
+  </section>
+
+  <div class="features">
+    <!-- Card 1 -->
+    <div class="card">
+      <div class="card-screen">
+        <div class="fake-ui">
+          <div class="fake-sidebar">
+            <div class="fake-sb-item"><?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1z"/></svg>Home</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v9H2z"/></svg>Messages</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M1 13 L5 3 L8 10 L11 5 L15 13z"/></svg>Activity</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="3"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5"/></svg>Staff</div>
+            <div class="fake-sb-item active"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Knowledge Base</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10v12H3z"/><path d="M5 5h6M5 8h6M5 11h4" stroke="#000" stroke-width="1" fill="none"/></svg>Forms</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2" stroke="#000" stroke-width="1.5" fill="none"/></svg>Sessions</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L2 6v8h4v-5h4v5h4V6z"/></svg>Moderation</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/></svg>App Store</div>
+            <div class="fake-sb-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="2"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="currentColor" stroke-width="1.5"/></svg>Settings</div>
+          </div>
+          <div class="fake-main">
+            <div class="fake-topbar">
+              <div><div class="fake-title">Knowledge Base</div><div class="fake-subtitle">Access guides & training docs</div></div>
+              <div class="fake-gbtn">+ New Doc</div>
+            </div>
+            <div class="fake-card">
+              <div class="fake-card-icon">📄</div>
+              <div class="fake-card-title">HR Handbook</div>
+              <div class="fake-card-desc">1 section</div>
+            </div>
+            <div class="fake-card" style="background:#141414; border-color:#1e1e1e;">
+              <div class="fake-card-title" style="color:#444;">Need help?</div>
+              <div class="fake-card-desc">Click a doc card above.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="card-footer-icon">📄</div>
+        <span class="card-footer-text">Knowledge base & training docs</span>
+        <span class="card-footer-arrow">›</span>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="card">
+      <div class="card-screen">
+        <div class="fake-ui">
+          <div class="fake-sidebar">
+            <div class="fake-sb-item">Home</div>
+            <div class="fake-sb-item">Messages</div>
+            <div class="fake-sb-item">Activity</div>
+            <div class="fake-sb-item">Staff</div>
+            <div class="fake-sb-item">Knowledge</div>
+            <div class="fake-sb-item active">Forms</div>
+            <div class="fake-sb-item">Sessions</div>
+            <div class="fake-sb-item">Moderation</div>
+            <div class="fake-sb-item">App Store</div>
+            <div class="fake-sb-item">Settings</div>
+          </div>
+          <div class="fake-main">
+            <div class="fake-topbar">
+              <div><div class="fake-title">Forms</div><div class="fake-subtitle">Create and manage forms</div></div>
+              <div class="fake-gbtn">+ Create Form</div>
+            </div>
+            <div class="fake-card">
+              <div class="fake-card-title">Ban Appeal</div>
+              <div style="display:flex;gap:3px;margin-top:4px;"><span class="fake-tag green">Active</span><span class="fake-tag gray">Private</span></div>
+              <div class="fake-card-desc" style="margin-top:5px;">0 submissions</div>
+              <div class="fake-row">
+                <span class="fake-action">✏ Edit</span>
+                <span class="fake-action">↔ Responses</span>
+                <span class="fake-action">Make Public</span>
+              </div>
+              <div style="font-size:7px;color:#e05555;margin-top:4px;">🗑 Delete</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="card-footer-icon">👥</div>
+        <span class="card-footer-text">Custom forms & ban appeals</span>
+        <span class="card-footer-arrow">›</span>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card">
+      <div class="card-screen">
+        <div class="fake-ui">
+          <div class="fake-sidebar">
+            <div class="fake-sb-item">Home</div>
+            <div class="fake-sb-item">Messages</div>
+            <div class="fake-sb-item">Activity</div>
+            <div class="fake-sb-item">Staff</div>
+            <div class="fake-sb-item">Knowledge</div>
+            <div class="fake-sb-item">Forms</div>
+            <div class="fake-sb-item">Sessions</div>
+            <div class="fake-sb-item active">Moderation</div>
+            <div class="fake-sb-item">App Store</div>
+            <div class="fake-sb-item">Settings</div>
+          </div>
+          <div class="fake-main">
+            <div class="fake-topbar">
+              <div><div class="fake-title">Remote Moderation</div><div class="fake-subtitle">Manage in-game bans remotely.</div></div>
+            </div>
+            <div class="fake-card">
+              <div class="fake-card-title" style="color:#3ddc84;margin-bottom:4px;">⚡ In-Game Bans</div>
+              <div class="fake-row">
+                <span class="fake-action" style="background:#3ddc84;color:#000;border-color:#3ddc84;font-weight:700;">Ban Player</span>
+                <span class="fake-action">Search</span>
+                <span class="fake-action">Active Bans</span>
+              </div>
+              <div class="fake-label">Roblox Username</div>
+              <div class="fake-input"></div>
+              <div class="fake-label">Ban Duration</div>
+              <div class="fake-input"></div>
+              <div class="fake-label">Display Reason</div>
+              <div class="fake-input"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="card-footer-icon">⚡</div>
+        <span class="card-footer-text">Remote in-game moderation</span>
+        <span class="card-footer-arrow">›</span>
+      </div>
+    </div>
+  </div>
+</div><!-- /landingPage -->
+
+
+<!-- ══════════ WORKSPACE PAGE ══════════ -->
+<div id="wsPage" class="page">
+
+  <!-- Empty state (shown when no workspaces) -->
+  <div id="wsEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:60px;">
+    <div style="font-size:56px;">🚀</div>
+    <div style="font-size:24px;font-weight:800;">No workspaces yet</div>
+    <div style="font-size:14.5px;color:#666;max-width:360px;text-align:center;line-height:1.6;">Create your first workspace to get started with Prism Space — manage your Roblox community in one place.</div>
+    <button class="btn-primary" style="font-size:15px;padding:13px 32px;margin-top:6px;" onclick="openCreateWs()">+ Create Workspace</button>
+  </div>
+
+  <!-- Workspace bar (hidden until workspace exists) -->
+  <div class="ws-bar" id="wsBar" style="display:none;">
+    <button class="ws-add" style="border-style:solid;" onclick="showPage('wsPicker')">← Workspaces</button>
+    <span class="ws-bar-label" style="margin-left:4px;">|</span>
+    <div id="wsTabs"></div>
+    <button class="ws-add" onclick="openCreateWs()">+ New Workspace</button>
+  </div>
+
+  <div class="ws-body" id="wsBodyMain" style="display:none;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">Main</div>
+      <div class="sb-item active" onclick="switchChannel('home',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </div>
+      <div class="sb-item" onclick="switchChannel('messages',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Messages
+      </div>
+      <div class="sb-item" onclick="switchChannel('activity',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Activity
+      </div>
+
+      <div class="sidebar-section">Staff</div>
+      <div class="sb-item" onclick="switchChannel('staff',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Staff Management
+      </div>
+      <div class="sb-item" onclick="switchChannel('roles',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Roles
+      </div>
+      <div class="sb-item" onclick="switchChannel('knowledge',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Knowledge Base
+      </div>
+      <div class="sb-item" onclick="switchChannel('forms',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Forms
+      </div>
+      <div class="sb-item" onclick="switchChannel('sessions',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Session Management
+      </div>
+
+      <div class="sidebar-section">Tools</div>
+      <div class="sb-item" onclick="switchChannel('moderation',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Moderation
+      </div>
+      <div class="sb-item" id="sb-attendance" style="display:none;" onclick="switchChannel('attendance',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Attendance
+      </div>
+      <div class="sb-item" onclick="switchChannel('appstore',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        App Store
+      </div>
+      <div class="sb-item" onclick="switchChannel('settings',this)">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="ws-content">
+
+      <!-- HOME -->
+      <div id="ch-home" class="channel-view active">
+        <div class="ch-header">
+          <div class="ch-title" id="homeWsName">🏠 Welcome to your Workspace</div>
+          <div class="ch-desc">Here's an overview of your Prism Space workspace.</div>
+        </div>
+        <div class="home-grid">
+          <div class="stat-card"><div class="stat-label">Total Staff</div><div class="stat-value" id="statStaff">4</div><div class="stat-sub">Active members</div></div>
+          <div class="stat-card"><div class="stat-label">Forms</div><div class="stat-value" id="statForms">2</div><div class="stat-sub">Live forms</div></div>
+          <div class="stat-card"><div class="stat-label">Bans Issued</div><div class="stat-value" id="statBans">0</div><div class="stat-sub">This week</div></div>
+          <div class="stat-card"><div class="stat-label">Sessions</div><div class="stat-value">3</div><div class="stat-sub">Total sessions</div></div>
+        </div>
+      </div>
+
+      <!-- MESSAGES -->
+      <div id="ch-messages" class="channel-view">
+        <div class="ch-header"><div class="ch-title">💬 Messages</div><div class="ch-desc">Internal announcements and channels</div></div>
+        <div style="display:flex;gap:0;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;height:420px;">
+          <div class="msg-channels">
+            <div style="font-size:10px;color:#444;text-transform:uppercase;padding:8px 14px 4px;">Channels</div>
+            <div class="msg-ch active" onclick="setMsgChannel(this,'#general')">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><text x="0" y="13" font-size="13">#</text></svg>
+              general
+            </div>
+            <div class="msg-ch" onclick="setMsgChannel(this,'#announcements')">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><text x="0" y="13" font-size="13">#</text></svg>
+              announcements
+            </div>
+            <div class="msg-ch" onclick="setMsgChannel(this,'#staff-chat')">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><text x="0" y="13" font-size="13">#</text></svg>
+              staff-chat
+            </div>
+          </div>
+          <div class="msg-area">
+            <div class="msg-thread" id="msgThread">
+              <div class="msg-bubble">
+                <div class="msg-avatar">O</div>
+                <div class="msg-content">
+                  <div class="msg-sender">Owner</div>
+                  <div class="msg-text">Welcome to Prism Space! 🎉</div>
+                  <div class="msg-time">Today at 12:00 PM</div>
+                </div>
+              </div>
+              <div class="msg-bubble">
+                <div class="msg-avatar">A</div>
+                <div class="msg-content">
+                  <div class="msg-sender">Admin</div>
+                  <div class="msg-text">Thanks for setting up the workspace.</div>
+                  <div class="msg-time">Today at 12:02 PM</div>
+                </div>
+              </div>
+            </div>
+            <div class="msg-input-row">
+              <input class="msg-input" id="msgInput" placeholder="Message #general..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+              <button class="msg-send" onclick="sendMsg()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY -->
+      <div id="ch-activity" class="channel-view">
+        <div class="ch-header"><div class="ch-title">📈 Activity Log</div><div class="ch-desc">Live staff activity tracking</div></div>
+        <div class="activity-list" id="activityList">
+          <div class="activity-row"><div class="act-icon"></div><div><div class="act-text"><span class="act-user">xRobloxKing</span> joined the session</div><div style="font-size:11px;color:#555;margin-top:2px;">Session Management</div></div><div class="act-time">2 min ago</div></div>
+          <div class="activity-row"><div class="act-icon"></div><div><div class="act-text"><span class="act-user">AdminUser</span> submitted Ban Appeal form</div></div><div class="act-time">15 min ago</div></div>
+          <div class="activity-row"><div class="act-icon"></div><div><div class="act-text"><span class="act-user">Owner</span> created document "HR Handbook"</div></div><div class="act-time">1 hr ago</div></div>
+          <div class="activity-row"><div class="act-icon"></div><div><div class="act-text"><span class="act-user">Moderator1</span> issued a ban</div></div><div class="act-time">3 hrs ago</div></div>
+        </div>
+      </div>
+
+      <!-- STAFF MANAGEMENT -->
+      <div id="ch-staff" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">Staff Management</div>
+          <div class="ch-desc">Manage your team members and ranks</div>
+          <div class="ch-actions">
+            <button class="btn-primary" onclick="openAddStaff()">+ Add Staff Member</button>
+          </div>
+        </div>
+        <table class="staff-table">
+          <thead>
+            <tr><th>Username</th><th>Rank</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="staffTableBody">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ROLES -->
+      <div id="ch-roles" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">⭐ Roles</div>
+          <div class="ch-desc">Create and manage ranks for your community</div>
+          <div class="ch-actions">
+            <button class="btn-primary" onclick="openCreateRole()">+ Create Role</button>
+          </div>
+        </div>
+        <div id="rolesList" style="display:flex;flex-direction:column;gap:10px;max-width:600px;"></div>
+      </div>
+
+      <!-- KNOWLEDGE BASE -->
+      <div id="ch-knowledge" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">📚 Knowledge Base</div>
+          <div class="ch-desc">Access guides, training materials, and documents</div>
+          <div class="ch-actions">
+            <button class="btn-primary" onclick="openNewDoc()">+ New Document</button>
+          </div>
+        </div>
+        <div class="cards-grid" id="kbGrid">
+          <div class="doc-card"><div class="doc-card-icon"></div><div class="doc-card-title">HR Handbook</div><div class="doc-card-meta">1 section · Updated today</div><div class="doc-card-desc">The official HR policies and procedures for staff members.</div></div>
+          <div class="doc-card"><div class="doc-card-icon"></div><div class="doc-card-title">Moderation Guidelines</div><div class="doc-card-meta">3 sections · Updated last week</div><div class="doc-card-desc">Rules and protocols for in-game and community moderation.</div></div>
+          <div class="doc-card"><div class="doc-card-icon"></div><div class="doc-card-title">Training Manual</div><div class="doc-card-meta">5 sections · Updated 2 weeks ago</div><div class="doc-card-desc">Step-by-step training guide for new staff recruits.</div></div>
+        </div>
+      </div>
+
+      <!-- FORMS LIST -->
+      <div id="ch-forms" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">📝 Forms</div>
+          <div class="ch-desc">Create and manage forms for staff and public use</div>
+          <div class="ch-actions">
+            <button class="btn-primary" onclick="openCreateForm()">+ Create Form</button>
+          </div>
+        </div>
+        <div id="formsList"></div>
+      </div>
+
+      <!-- FORM EDITOR -->
+      <div id="ch-form-editor" class="channel-view">
+        <div class="ch-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <button class="btn-secondary" style="font-size:12px;padding:6px 12px;margin-bottom:10px;" onclick="closeFormEditor()">← Back to Forms</button>
+            <div class="ch-title" id="editorFormName">Form Editor</div>
+            <div class="ch-desc">Edit questions and access control for this form</div>
+          </div>
+          <button class="btn-primary" onclick="saveFormEditor()">💾 Save Form</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mod-tabs" style="margin-bottom:24px;">
+          <div class="mod-tab active" onclick="switchEditorTab('questions',this)">📋 Questions</div>
+          <div class="mod-tab" onclick="switchEditorTab('access',this)">🔒 Access Control</div>
+        </div>
+
+        <!-- Questions panel -->
+        <div id="editor-questions" class="mod-panel active">
+          <div id="questionsList" style="display:flex;flex-direction:column;gap:12px;max-width:620px;"></div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-secondary" onclick="addQuestion('short')">+ Short Answer</button>
+            <button class="btn-secondary" onclick="addQuestion('paragraph')">+ Paragraph</button>
+            <button class="btn-secondary" onclick="addQuestion('multiple')">+ Multiple Choice</button>
+            <button class="btn-secondary" onclick="addQuestion('checkbox')">+ Checkboxes</button>
+          </div>
+        </div>
+
+        <!-- Access panel -->
+        <div id="editor-access" class="mod-panel">
+          <div style="max-width:500px;">
+            <p style="font-size:13px;color:#777;margin-bottom:16px;">Add Roblox usernames that have access to view or manage this form.</p>
+            <div style="display:flex;gap:10px;margin-bottom:18px;">
+              <input class="field-input" id="accessUsername" placeholder="Roblox username" style="flex:1;"/>
+              <select class="field-input" id="accessRole" style="width:140px;">
+                <option>Viewer</option>
+                <option>Editor</option>
+                <option>Manager</option>
+              </select>
+              <button class="btn-primary" onclick="addAccessUser()">Add</button>
+            </div>
+            <div id="accessList" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SESSION MANAGEMENT -->
+      <div id="ch-sessions" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">🕐 Session Management</div>
+          <div class="ch-desc">Host and track live staff sessions</div>
+          <div class="ch-actions">
+            <button class="btn-primary" onclick="openNewSession()">+ Start Session</button>
+          </div>
+        </div>
+        <div class="session-grid" id="sessionGrid"></div>
+      </div>
+
+      <!-- MODERATION -->
+      <div id="ch-moderation" class="channel-view">
+        <div class="ch-header"><div class="ch-title">🛡 Moderation</div><div class="ch-desc">Manage in-game bans and player restrictions remotely</div></div>
+        <div class="mod-tabs">
+          <div class="mod-tab active" onclick="switchModTab('ban-player',this)">⚡ Ban Player</div>
+          <div class="mod-tab" onclick="switchModTab('active-bans',this)">Active Bans</div>
+          <div class="mod-tab" onclick="switchModTab('search',this)">Search Player</div>
+        </div>
+
+        <!-- Ban Player -->
+        <div id="mod-ban-player" class="mod-panel active">
+          <div class="mod-form">
+            <div class="mod-form-title">⚡ In-Game Ban</div>
+            <div class="field-group"><label class="field-label">Roblox Username</label><input class="field-input" id="banUsername" placeholder="Enter Roblox username"/></div>
+            <div class="field-group"><label class="field-label">Ban Duration</label>
+              <select class="field-input" id="banDuration">
+                <option>Permanent</option><option>1 Day</option><option>3 Days</option><option>7 Days</option><option>30 Days</option>
+              </select>
+            </div>
+            <div class="field-group"><label class="field-label">Display Reason (shown to player)</label><input class="field-input" id="banDisplayReason" placeholder="You have been banned for..."/></div>
+            <div class="field-group"><label class="field-label">Private Reason (staff only)</label><textarea class="field-input" id="banPrivateReason" rows="3" placeholder="Internal notes..."></textarea></div>
+            <button class="btn-primary" onclick="issueBan()">Ban Player</button>
+          </div>
+        </div>
+
+        <!-- Active Bans -->
+        <div id="mod-active-bans" class="mod-panel">
+          <div class="ban-list" id="banList">
+            <div style="color:#555;font-size:13px;">No active bans.</div>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div id="mod-search" class="mod-panel">
+          <div class="mod-form">
+            <div class="mod-form-title">🔍 Search Player</div>
+            <div class="field-group"><label class="field-label">Roblox Username</label><input class="field-input" id="searchUsername" placeholder="Enter username to search"/></div>
+            <button class="btn-secondary" onclick="searchPlayer()">Search</button>
+            <div id="searchResult" style="margin-top:16px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APP STORE -->
+      <div id="ch-appstore" class="channel-view">
+        <div class="ch-header"><div class="ch-title">🛒 App Store</div><div class="ch-desc">Extend your workspace with powerful integrations</div></div>
+        <div class="app-grid">
+          <div class="app-card"><div class="app-icon">🤖</div><div class="app-name">Auto-Rank</div><div class="app-desc">Automatically rank staff based on activity logged.</div><div class="app-btn"><button class="btn-primary" onclick="installApp(this,'Auto-Rank')">Install</button></div></div>
+          <div class="app-card"><div class="app-icon">📊</div><div class="app-name">Analytics Dashboard</div><div class="app-desc">Visualize staff performance and session metrics.</div><div class="app-btn"><button class="btn-primary" onclick="installApp(this,'Analytics Dashboard')">Install</button></div></div>
+          <div class="app-card"><div class="app-icon">🔔</div><div class="app-name">Discord Webhooks</div><div class="app-desc">Send automatic notifications to your Discord server.</div><div class="app-btn"><button class="btn-secondary">Installed</button></div></div>
+          <div class="app-card"><div class="app-icon">🏆</div><div class="app-name">Leaderboard</div><div class="app-desc">Display top contributors and most active staff.</div><div class="app-btn"><button class="btn-primary" onclick="installApp(this,'Leaderboard')">Install</button></div></div>
+          <div class="app-card" id="appcard-attendance">
+            <div class="app-icon">📋</div>
+            <div class="app-name">Meeting Attendance</div>
+            <div class="app-desc">Take staff meeting attendance — mark who showed up, was late, or was absent.</div>
+            <div class="app-btn"><button class="btn-primary" id="attendanceInstallBtn" onclick="installAttendance()">Install</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE (installed app) -->
+      <div id="ch-attendance" class="channel-view">
+        <div class="ch-header">
+          <div class="ch-title">📋 Meeting Attendance</div>
+          <div class="ch-desc">Track who attended each staff meeting</div>
+          <div class="ch-actions">
+            <button class="btn-primary" onclick="openNewAttendance()">+ New Attendance Sheet</button>
+          </div>
+        </div>
+
+        <!-- New sheet form -->
+        <div id="attendanceForm" style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px;max-width:560px;margin-bottom:24px;display:none;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:14px;">📋 New Attendance Sheet</div>
+          <div class="field-group"><label class="field-label">Meeting Name</label><input class="field-input" id="attMeetingName" placeholder="e.g. Weekly Staff Meeting"/></div>
+          <div class="field-group"><label class="field-label">Date</label><input class="field-input" id="attDate" type="date"/></div>
+          <div class="field-group">
+            <label class="field-label">Staff Members</label>
+            <div id="attStaffChecks" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <input class="field-input" id="attAddStaff" placeholder="Add username manually" style="flex:1;"/>
+              <button class="btn-secondary" style="padding:8px 14px;font-size:13px;" onclick="attAddManualStaff()">Add</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:6px;">
+            <button class="btn-primary" onclick="saveAttendanceSheet()">Save Sheet</button>
+            <button class="btn-secondary" onclick="document.getElementById('attendanceForm').style.display='none'">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Saved sheets -->
+        <div id="attendanceSheets" style="display:flex;flex-direction:column;gap:14px;max-width:620px;"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="ch-settings" class="channel-view">
+        <div class="ch-header"><div class="ch-title">⚙ Settings</div><div class="ch-desc">Configure your workspace</div></div>
+        <div style="max-width:480px;display:flex;flex-direction:column;gap:18px;">
+          <div class="field-group"><label class="field-label">Workspace Name</label><input class="field-input" id="settingsWsName" placeholder="My Workspace"/></div>
+          <div class="field-group"><label class="field-label">Roblox Game ID</label><input class="field-input" placeholder="Enter your game ID"/></div>
+          <div class="field-group"><label class="field-label">Owner Username</label><input class="field-input" placeholder="Roblox username"/></div>
+          <div class="field-group"><label class="field-label">Description</label><textarea class="field-input" rows="3" placeholder="Describe your workspace..."></textarea></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-primary" onclick="saveSettings()">Save Changes</button>
+            <button class="btn-danger">Delete Workspace</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /ws-content -->
+  </div><!-- /ws-body -->
+</div><!-- /wsPage -->
+
+<!-- Create Workspace Modal -->
+<div class="modal-bg" id="createWsModal">
+  <div class="modal">
+    <h2>Create a New Workspace</h2>
+    <div class="field-group"><label class="field-label">Workspace Name</label><input class="field-input" id="newWsName" placeholder="e.g. My Roblox Community"/></div>
+    <div class="field-group"><label class="field-label">Roblox Game ID</label><input class="field-input" id="newWsGameId" placeholder="e.g. 123456789"/></div>
+    <div class="field-group"><label class="field-label">Description</label><textarea class="field-input" id="newWsDesc" rows="3" placeholder="Describe your workspace..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('createWsModal')">Cancel</button>
+      <button class="btn-primary" onclick="createWorkspace()">Create Workspace</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal-bg" id="addStaffModal">
+  <div class="modal">
+    <h2>Add Staff Member</h2>
+    <div class="field-group"><label class="field-label">Roblox Username</label><input class="field-input" id="newStaffUser" placeholder="Username"/></div>
+    <div class="field-group"><label class="field-label">Rank</label>
+      <select class="field-input" id="newStaffRank">
+        <option>Staff</option><option>Moderator</option><option>Admin</option><option>Manager</option><option>Owner</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('addStaffModal')">Cancel</button>
+      <button class="btn-primary" onclick="addStaffMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Document Modal -->
+<div class="modal-bg" id="newDocModal">
+  <div class="modal">
+    <h2>New Document</h2>
+    <div class="field-group"><label class="field-label">Title</label><input class="field-input" id="docTitle" placeholder="Document title"/></div>
+    <div class="field-group"><label class="field-label">Content</label><textarea class="field-input" id="docContent" rows="4" placeholder="Write your document content here..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('newDocModal')">Cancel</button>
+      <button class="btn-primary" onclick="saveNewDoc()">Create Document</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Form Modal -->
+<div class="modal-bg" id="createFormModal">
+  <div class="modal">
+    <h2>Create Form</h2>
+    <div class="field-group"><label class="field-label">Form Name</label><input class="field-input" id="newFormName" placeholder="e.g. Staff Application"/></div>
+    <div class="field-group"><label class="field-label">Visibility</label>
+      <select class="field-input" id="newFormVisibility"><option>Private</option><option>Public</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('createFormModal')">Cancel</button>
+      <button class="btn-primary" onclick="createForm()">Create Form</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Session Modal -->
+<div class="modal-bg" id="newSessionModal">
+  <div class="modal">
+    <h2>Start Session</h2>
+    <div class="field-group"><label class="field-label">Session Name</label><input class="field-input" id="sessionName" placeholder="e.g. Weekly Meeting"/></div>
+    <div class="field-group"><label class="field-label">Host Username</label><input class="field-input" id="sessionHost" placeholder="Your Roblox username"/></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('newSessionModal')">Cancel</button>
+      <button class="btn-primary" onclick="startSession()">Start Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Role Modal -->
+<div class="modal-bg" id="createRoleModal">
+  <div class="modal">
+    <h2>Create Role</h2>
+    <div class="field-group"><label class="field-label">Role Name</label><input class="field-input" id="newRoleName" placeholder="e.g. Moderator"/></div>
+    <div class="field-group"><label class="field-label">Color</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="roleColorPicker">
+        <span class="role-color-opt" data-color="#3ddc84" style="background:#3ddc84;" onclick="selectRoleColor(this)"></span>
+        <span class="role-color-opt" data-color="#4a90e2" style="background:#4a90e2;" onclick="selectRoleColor(this)"></span>
+        <span class="role-color-opt" data-color="#e05555" style="background:#e05555;" onclick="selectRoleColor(this)"></span>
+        <span class="role-color-opt" data-color="#f5a623" style="background:#f5a623;" onclick="selectRoleColor(this)"></span>
+        <span class="role-color-opt" data-color="#bd10e0" style="background:#bd10e0;" onclick="selectRoleColor(this)"></span>
+        <span class="role-color-opt" data-color="#50e3c2" style="background:#50e3c2;" onclick="selectRoleColor(this)"></span>
+        <span class="role-color-opt" data-color="#fff" style="background:#fff;" onclick="selectRoleColor(this)"></span>
+      </div>
+    </div>
+    <div class="field-group"><label class="field-label">Permissions</label>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer;"><input type="checkbox" id="perm_manage_staff" style="accent-color:#3ddc84;width:14px;height:14px;"> Manage Staff</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer;"><input type="checkbox" id="perm_moderate" style="accent-color:#3ddc84;width:14px;height:14px;"> Moderate Players</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer;"><input type="checkbox" id="perm_forms" style="accent-color:#3ddc84;width:14px;height:14px;"> Manage Forms</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer;"><input type="checkbox" id="perm_kb" style="accent-color:#3ddc84;width:14px;height:14px;"> Edit Knowledge Base</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#ccc;cursor:pointer;"><input type="checkbox" id="perm_sessions" style="accent-color:#3ddc84;width:14px;height:14px;"> Host Sessions</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('createRoleModal')">Cancel</button>
+      <button class="btn-primary" onclick="createRole()">Create Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+<style>
+  .role-color-opt { width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:border-color 0.15s; }
+  .role-color-opt.selected { border-color:#fff; }
+</style>
+
+<script>
+  // ── Auth ──
+  let psAccounts = JSON.parse(localStorage.getItem('ps_accounts') || '[]');
+  let psCurrentUser = JSON.parse(localStorage.getItem('ps_current_user') || 'null');
+
+  function showAuthTab(tab) {
+    document.getElementById('loginForm').style.display  = tab === 'login'  ? 'block' : 'none';
+    document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+    document.getElementById('loginError').style.display  = 'none';
+    document.getElementById('signupError').style.display = 'none';
+  }
+
+  function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const pass  = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    const acc = psAccounts.find(a => a.email === email && a.password === pass);
+    if(!acc) {
+      errEl.textContent = 'Invalid email or password.';
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    psCurrentUser = acc;
+    localStorage.setItem('ps_current_user', JSON.stringify(acc));
+    afterLogin();
+  }
+
+  function doSignup() {
+    const name    = document.getElementById('signupName').value.trim();
+    const email   = document.getElementById('signupEmail').value.trim().toLowerCase();
+    const pass    = document.getElementById('signupPassword').value;
+    const confirm = document.getElementById('signupConfirm').value;
+    const errEl   = document.getElementById('signupError');
+    if(!name)  { errEl.textContent='Enter your name.'; errEl.style.display='block'; return; }
+    if(!email) { errEl.textContent='Enter your email.'; errEl.style.display='block'; return; }
+    if(pass.length < 6) { errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
+    if(pass !== confirm) { errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
+    if(psAccounts.find(a => a.email === email)) { errEl.textContent='An account with this email already exists.'; errEl.style.display='block'; return; }
+    const acc = {name, email, password: pass};
+    psAccounts.push(acc);
+    localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    psCurrentUser = acc;
+    localStorage.setItem('ps_current_user', JSON.stringify(acc));
+    errEl.style.display = 'none';
+    afterLogin();
+  }
+
+  const ADMIN_EMAIL = 'oceanviewrp1@gmail.com';
+
+  // Ensure admin account exists
+  (function seedAdmin() {
+    const exists = psAccounts.find(a => a.email === ADMIN_EMAIL);
+    if(!exists) {
+      psAccounts.push({name: 'OceanviewRP Admin', email: ADMIN_EMAIL, password: '123456'});
+      localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    }
+  })();
+
+  function afterLogin() {
+    document.getElementById('navAccount').textContent = psCurrentUser.name;
+    // Show Staff Dashboard link only for admin
+    document.getElementById('navStaffDash').style.display =
+      psCurrentUser.email === ADMIN_EMAIL ? 'list-item' : 'none';
+    showPage('wsPicker');
+  }
+
+  function signOut() {
+    psCurrentUser = null;
+    localStorage.removeItem('ps_current_user');
+    document.getElementById('navAccount').textContent = 'Account';
+    document.getElementById('navStaffDash').style.display = 'none';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('authPage').classList.add('active');
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+    showAuthTab('login');
+  }
+
+  // ── State ──
+  let workspaces = JSON.parse(localStorage.getItem('ps_workspaces') || '[]');
+  let activeWs = workspaces.length ? workspaces[0].id : null;
+
+  function saveWorkspaces() {
+    localStorage.setItem('ps_workspaces', JSON.stringify(workspaces));
+  }
+  let bans = [];
+  let currentMsgChannel = '#general';
+
+  // ── Page switching ──
+  function showPage(p) {
+    if(!psCurrentUser) return; // must be logged in
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    if(p === 'ws') {
+      document.getElementById('wsPage').classList.add('active');
+      updateWsView();
+    } else if(p === 'wsPicker') {
+      document.getElementById('wsPickerPage').classList.add('active');
+      renderWsPicker();
+    } else if(p === 'staffDash') {
+      if(psCurrentUser.email !== ADMIN_EMAIL) return;
+      document.getElementById('staffDashPage').classList.add('active');
+      renderStaffDash();
+    } else {
+      document.getElementById('landingPage').classList.add('active');
+    }
+  }
+
+  function renderWsPicker() {
+    const grid = document.getElementById('wsPickerGrid');
+    grid.innerHTML = '';
+    workspaces.forEach(ws => {
+      const card = document.createElement('div');
+      card.className = 'ws-picker-card';
+      card.innerHTML = `
+        <div class="ws-picker-card-icon">🏢</div>
+        <div class="ws-picker-card-name">${escHtml(ws.name)}</div>
+        <div class="ws-picker-card-meta">Click to open</div>`;
+      card.onclick = () => openWorkspace(ws.id);
+      grid.appendChild(card);
+    });
+    // New workspace card
+    const newCard = document.createElement('div');
+    newCard.className = 'ws-picker-new';
+    newCard.innerHTML = `<span style="font-size:26px;">+</span><span style="font-size:13.5px;font-weight:600;">New Workspace</span>`;
+    newCard.onclick = () => openCreateWs();
+    grid.appendChild(newCard);
+  }
+
+  function openWorkspace(id) {
+    activeWs = id;
+    const ws = workspaces.find(w => w.id === id);
+    if(ws) document.getElementById('homeWsName').textContent = '🏠 ' + ws.name;
+    showPage('ws');
+  }
+
+  function renderStaffDash() {
+    document.getElementById('dashTotalWs').textContent = workspaces.length;
+    document.getElementById('dashTotalAccounts').textContent = psAccounts.length;
+    document.getElementById('dashTotalRoles').textContent = roles.length;
+    // Workspace list
+    const wl = document.getElementById('dashWsList');
+    if(workspaces.length === 0) {
+      wl.innerHTML = '<div style="color:#555;font-size:13px;">No workspaces created yet.</div>';
+    } else {
+      wl.innerHTML = workspaces.map(ws => `
+        <div style="background:#111;border:1px solid #1e1e1e;border-radius:9px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:20px;">🏢</span>
+            <div>
+              <div style="font-size:14.5px;font-weight:700;">${escHtml(ws.name)}</div>
+              <div style="font-size:11.5px;color:#555;">ID: ${escHtml(ws.id)}</div>
+            </div>
+          </div>
+          <button class="btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="openWorkspace('${ws.id}')">Open</button>
+        </div>`).join('');
+    }
+    // Accounts list
+    const al = document.getElementById('dashAccountsList');
+    if(psAccounts.length === 0) {
+      al.innerHTML = '<div style="color:#555;font-size:13px;">No accounts registered.</div>';
+    } else {
+      al.innerHTML = psAccounts.map((a, i) => {
+        const roleBadge = a.role === 'Admin'
+          ? '<span style="font-size:11px;background:rgba(61,220,132,0.12);color:#3ddc84;border-radius:5px;padding:3px 8px;font-weight:700;">Admin</span>'
+          : a.role === 'Staff'
+          ? '<span style="font-size:11px;background:rgba(74,144,226,0.14);color:#4a90e2;border-radius:5px;padding:3px 8px;font-weight:700;">Staff</span>'
+          : '<span style="font-size:11px;background:#1e1e1e;color:#666;border-radius:5px;padding:3px 8px;">Member</span>';
+        const isProtected = a.email === ADMIN_EMAIL;
+        return `<div style="background:#111;border:1px solid #1e1e1e;border-radius:9px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(61,220,132,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:#3ddc84;">${escHtml(a.name[0].toUpperCase())}</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;">${escHtml(a.name)}</div>
+              <div style="font-size:11.5px;color:#555;">${escHtml(a.email)}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${roleBadge}
+            ${!isProtected ? `
+            <select onchange="setAccountRole(${i},this.value)" style="background:#161616;border:1px solid #252525;border-radius:6px;padding:4px 8px;font-size:12px;color:#ccc;">
+              <option value="Member" ${(!a.role||a.role==='Member')?'selected':''}>Member</option>
+              <option value="Staff" ${a.role==='Staff'?'selected':''}>Staff</option>
+              <option value="Admin" ${a.role==='Admin'?'selected':''}>Admin</option>
+            </select>
+            <button class="icon-btn danger" onclick="deleteAccount(${i})" style="font-size:12px;padding:5px 9px;">🗑 Delete</button>` : '<span style="font-size:11px;color:#3ddc84;font-weight:700;">OWNER</span>'}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function setAccountRole(i, role) {
+    psAccounts[i].role = role;
+    localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    renderStaffDash();
+    showToast('Role updated');
+  }
+
+  function deleteAccount(i) {
+    const acc = psAccounts[i];
+    if(acc.email === ADMIN_EMAIL) { showToast('Cannot delete owner account'); return; }
+    if(acc.email === psCurrentUser.email) { showToast('Cannot delete your own account'); return; }
+    psAccounts.splice(i, 1);
+    localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    renderStaffDash();
+    showToast('Account deleted');
+  }
+
+  function updateWsView() {
+    const empty = document.getElementById('wsEmpty');
+    const bar   = document.getElementById('wsBar');
+    const body  = document.getElementById('wsBodyMain');
+    if(workspaces.length === 0) {
+      empty.style.display = 'flex';
+      bar.style.display   = 'none';
+      body.style.display  = 'none';
+    } else {
+      empty.style.display = 'none';
+      bar.style.display   = 'flex';
+      body.style.display  = 'flex';
+      renderWsTabs();
+    }
+  }
+
+  // ── Workspace tabs ──
+  function renderWsTabs() {
+    const c = document.getElementById('wsTabs');
+    c.innerHTML = '';
+    workspaces.forEach(ws => {
+      const d = document.createElement('div');
+      d.className = 'ws-tab' + (ws.id === activeWs ? ' selected' : '');
+      d.innerHTML = `<span class="ws-dot"></span>${ws.name}`;
+      d.onclick = () => { activeWs = ws.id; renderWsTabs(); document.getElementById('homeWsName').textContent = '🏠 ' + ws.name; };
+      c.appendChild(d);
+    });
+  }
+
+  // ── Sidebar channel switch ──
+  function switchChannel(name, el) {
+    document.querySelectorAll('.channel-view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+    document.getElementById('ch-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // ── Moderation tabs ──
+  function switchModTab(name, el) {
+    document.querySelectorAll('.mod-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mod-panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('mod-' + name).classList.add('active');
+  }
+
+  // ── Messages ──
+  function setMsgChannel(el, ch) {
+    document.querySelectorAll('.msg-ch').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    currentMsgChannel = ch;
+    document.querySelector('.msg-input').placeholder = 'Message ' + ch + '...';
+  }
+
+  function sendMsg() {
+    const input = document.getElementById('msgInput');
+    const text = input.value.trim();
+    if(!text) return;
+    const thread = document.getElementById('msgThread');
+    const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const el = document.createElement('div');
+    el.className = 'msg-bubble';
+    el.innerHTML = `<div class="msg-avatar">Y</div><div class="msg-content"><div class="msg-sender">You</div><div class="msg-text">${escHtml(text)}</div><div class="msg-time">Today at ${now}</div></div>`;
+    thread.appendChild(el);
+    thread.scrollTop = thread.scrollHeight;
+    input.value = '';
+  }
+
+  // ── Moderation ──
+  function issueBan() {
+    const user = document.getElementById('banUsername').value.trim();
+    const dur  = document.getElementById('banDuration').value;
+    const reason = document.getElementById('banDisplayReason').value.trim() || 'No reason provided';
+    if(!user) { showToast('Enter a username'); return; }
+    bans.push({user, dur, reason});
+    renderBanList();
+    document.getElementById('banUsername').value = '';
+    document.getElementById('banDisplayReason').value = '';
+    document.getElementById('banPrivateReason').value = '';
+    document.getElementById('statBans').textContent = bans.length;
+    showToast('Ban issued for ' + user);
+  }
+
+  function renderBanList() {
+    const el = document.getElementById('banList');
+    if(bans.length === 0) { el.innerHTML = '<div style="color:#555;font-size:13px;">No active bans.</div>'; return; }
+    el.innerHTML = bans.map((b,i) => `
+      <div class="ban-row">
+        <div>
+          <div class="ban-user">${escHtml(b.user)}</div>
+          <div class="ban-reason">${escHtml(b.reason)}</div>
+        </div>
+        <div class="ban-dur">${escHtml(b.dur)}</div>
+        <button class="unban-btn" onclick="removeBan(${i})">Unban</button>
+      </div>`).join('');
+  }
+
+  function removeBan(i) {
+    const user = bans[i].user;
+    bans.splice(i, 1);
+    renderBanList();
+    document.getElementById('statBans').textContent = bans.length;
+    showToast(user + ' has been unbanned');
+  }
+
+  function searchPlayer() {
+    const q = document.getElementById('searchUsername').value.trim();
+    const res = document.getElementById('searchResult');
+    if(!q) { res.innerHTML = ''; return; }
+    const ban = bans.find(b => b.user.toLowerCase() === q.toLowerCase());
+    if(ban) {
+      res.innerHTML = `<div class="ban-row"><div><div class="ban-user">${escHtml(ban.user)}</div><div class="ban-reason">${escHtml(ban.reason)}</div></div><div><span class="tag red">Banned</span></div></div>`;
+    } else {
+      res.innerHTML = `<div style="background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:14px;font-size:13.5px;">✅ <strong>${escHtml(q)}</strong> — no active bans found.</div>`;
+    }
+  }
+
+  // ── Staff ──
+  function updateStaffCount() {
+    document.getElementById('statStaff').textContent = document.getElementById('staffTableBody').querySelectorAll('tr').length;
+  }
+  function openAddStaff() { openModal('addStaffModal'); }
+  function addStaffMember() {
+    const user = document.getElementById('newStaffUser').value.trim();
+    const rank = document.getElementById('newStaffRank').value;
+    if(!user) { showToast('Enter a username'); return; }
+    const tbody = document.getElementById('staffTableBody');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escHtml(user)}</td><td><span class="rank-pill">${escHtml(rank)}</span></td><td>${months[now.getMonth()]} ${now.getFullYear()}</td><td><span class="tag green">Active</span></td><td style="display:flex;gap:6px;"><button class="icon-btn">✏ Edit</button><button class="icon-btn danger" onclick="this.closest('tr').remove();updateStaffCount();showToast('Staff member removed')">🗑 Delete</button></td>`;
+    tbody.appendChild(tr);
+    updateStaffCount();
+    closeModal('addStaffModal');
+    document.getElementById('newStaffUser').value = '';
+    showToast('Staff member added');
+  }
+
+  // ── Knowledge Base ──
+  function openNewDoc() { openModal('newDocModal'); }
+  function saveNewDoc() {
+    const title = document.getElementById('docTitle').value.trim();
+    if(!title) { showToast('Enter a title'); return; }
+    const grid = document.getElementById('kbGrid');
+    const card = document.createElement('div');
+    card.className = 'doc-card';
+    card.innerHTML = `<div class="doc-card-icon">📄</div><div class="doc-card-title">${escHtml(title)}</div><div class="doc-card-meta">1 section · Just now</div><div class="doc-card-desc">${escHtml(document.getElementById('docContent').value.trim()||'No description.')}</div>`;
+    grid.appendChild(card);
+    closeModal('newDocModal');
+    document.getElementById('docTitle').value = '';
+    document.getElementById('docContent').value = '';
+    showToast('Document created');
+  }
+
+  // ── Forms ──
+  // ── Forms data store ──
+  let formsData = {}; // id -> {name, vis, questions:[], access:[]}
+  let editingFormId = null;
+
+  function openCreateForm() { openModal('createFormModal'); }
+
+  function createForm() {
+    const name = document.getElementById('newFormName').value.trim();
+    const vis  = document.getElementById('newFormVisibility').value;
+    if(!name) { showToast('Enter a form name'); return; }
+    const id = 'form_' + Date.now();
+    formsData[id] = {name, vis, questions:[], access:[]};
+    renderFormItem(id);
+    document.getElementById('statForms').textContent = Object.keys(formsData).length;
+    closeModal('createFormModal');
+    document.getElementById('newFormName').value = '';
+    showToast('Form created');
+  }
+
+  function renderFormItem(id) {
+    const f = formsData[id];
+    const existing = document.getElementById('fi_'+id);
+    const div = existing || document.createElement('div');
+    if(!existing) {
+      div.id = 'fi_' + id;
+      div.className = 'form-item';
+      document.getElementById('formsList').appendChild(div);
+    }
+    div.innerHTML = `
+      <div class="form-item-left">
+        <div class="form-item-name">${escHtml(f.name)}</div>
+        <div class="form-item-tags"><span class="tag green">Active</span><span class="tag ${f.vis==='Public'?'green':'gray'}">${escHtml(f.vis)}</span></div>
+        <div class="form-item-meta">${f.questions.length} question${f.questions.length!==1?'s':''} · 0 submissions</div>
+      </div>
+      <div class="form-item-actions">
+        <button class="icon-btn" onclick="openFormEditor('${id}')">✏ Edit</button>
+        <button class="icon-btn">↔ Responses</button>
+        <button class="icon-btn danger" onclick="deleteForm('${id}')">🗑</button>
+      </div>`;
+  }
+
+  function deleteForm(id) {
+    const el = document.getElementById('fi_'+id);
+    if(el) el.remove();
+    delete formsData[id];
+    document.getElementById('statForms').textContent = Object.keys(formsData).length;
+    showToast('Form deleted');
+  }
+
+  // ── Form Editor ──
+  function openFormEditor(id) {
+    editingFormId = id;
+    const f = formsData[id];
+    document.getElementById('editorFormName').textContent = '✏ Editing: ' + f.name;
+    // Render questions
+    renderEditorQuestions();
+    // Render access
+    renderAccessList();
+    // Switch editor tab to questions
+    document.querySelectorAll('.mod-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mod-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('#editor-questions').classList.add('active');
+    document.querySelectorAll('#ch-form-editor .mod-tab')[0].classList.add('active');
+    // Show editor channel
+    document.querySelectorAll('.channel-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('ch-form-editor').classList.add('active');
+    // Remove active from sidebar
+    document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+  }
+
+  function closeFormEditor() {
+    document.querySelectorAll('.channel-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('ch-forms').classList.add('active');
+    // Re-activate sidebar forms
+    document.querySelectorAll('.sb-item').forEach(s => {
+      if(s.textContent.trim().includes('Forms')) s.classList.add('active');
+    });
+  }
+
+  function saveFormEditor() {
+    if(!editingFormId) return;
+    renderFormItem(editingFormId);
+    showToast('Form saved!');
+    closeFormEditor();
+  }
+
+  function switchEditorTab(name, el) {
+    document.querySelectorAll('#ch-form-editor .mod-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#ch-form-editor .mod-panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('editor-' + name).classList.add('active');
+  }
+
+  // Questions
+  function renderEditorQuestions() {
+    const f = formsData[editingFormId];
+    const el = document.getElementById('questionsList');
+    el.innerHTML = '';
+    f.questions.forEach((q, i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;';
+      let optionsHtml = '';
+      if(q.type === 'multiple' || q.type === 'checkbox') {
+        optionsHtml = `<div id="opts_${i}" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+          ${(q.options||[]).map((o,oi)=>`<div style="display:flex;gap:6px;align-items:center;"><input class="field-input" style="flex:1;" value="${escHtml(o)}" oninput="formsData[editingFormId].questions[${i}].options[${oi}]=this.value"/><button class="icon-btn danger" onclick="removeOption(${i},${oi})">✕</button></div>`).join('')}
+        </div>
+        <button class="btn-secondary" style="font-size:11px;padding:5px 10px;margin-top:6px;" onclick="addOption(${i})">+ Add Option</button>`;
+      }
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.07em;">${q.type==='short'?'Short Answer':q.type==='paragraph'?'Paragraph':q.type==='multiple'?'Multiple Choice':'Checkboxes'}</span>
+          <button class="icon-btn danger" onclick="removeQuestion(${i})">🗑 Remove</button>
+        </div>
+        <input class="field-input" placeholder="Question text" value="${escHtml(q.text)}" oninput="formsData[editingFormId].questions[${i}].text=this.value"/>
+        ${optionsHtml}`;
+      el.appendChild(div);
+    });
+    if(f.questions.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:13px;">No questions yet. Add one below.</div>';
+    }
+  }
+
+  function addQuestion(type) {
+    if(!editingFormId) return;
+    const q = {type, text:'', options: (type==='multiple'||type==='checkbox') ? ['Option 1'] : []};
+    formsData[editingFormId].questions.push(q);
+    renderEditorQuestions();
+  }
+
+  function removeQuestion(i) {
+    formsData[editingFormId].questions.splice(i,1);
+    renderEditorQuestions();
+  }
+
+  function addOption(qi) {
+    formsData[editingFormId].questions[qi].options.push('Option ' + (formsData[editingFormId].questions[qi].options.length+1));
+    renderEditorQuestions();
+  }
+
+  function removeOption(qi, oi) {
+    formsData[editingFormId].questions[qi].options.splice(oi,1);
+    renderEditorQuestions();
+  }
+
+  // Access control
+  function renderAccessList() {
+    const f = formsData[editingFormId];
+    const el = document.getElementById('accessList');
+    el.innerHTML = '';
+    if(f.access.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:13px;">No users added yet.</div>';
+      return;
+    }
+    f.access.forEach((a,i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:rgba(61,220,132,0.15);display:flex;align-items:center;justify-content:center;font-weight:700;color:#3ddc84;font-size:13px;">${escHtml(a.user[0].toUpperCase())}</div>
+          <div><div style="font-size:13.5px;font-weight:600;">${escHtml(a.user)}</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="tag ${a.role==='Manager'?'green':a.role==='Editor'?'gray':'gray'}">${escHtml(a.role)}</span>
+          <button class="icon-btn danger" onclick="removeAccessUser(${i})">✕</button>
+        </div>`;
+      el.appendChild(div);
+    });
+  }
+
+  function addAccessUser() {
+    const user = document.getElementById('accessUsername').value.trim();
+    const role = document.getElementById('accessRole').value;
+    if(!user) { showToast('Enter a username'); return; }
+    const f = formsData[editingFormId];
+    if(f.access.find(a => a.user.toLowerCase() === user.toLowerCase())) { showToast('User already added'); return; }
+    f.access.push({user, role});
+    renderAccessList();
+    document.getElementById('accessUsername').value = '';
+    showToast(user + ' added');
+  }
+
+  function removeAccessUser(i) {
+    formsData[editingFormId].access.splice(i,1);
+    renderAccessList();
+  }
+
+  // ── Roles ──
+  let roles = JSON.parse(localStorage.getItem('ps_roles') || '[]');
+  let selectedRoleColor = '#3ddc84';
+  let editingRoleIndex = -1; // -1 = create mode
+
+  function saveRoles() { localStorage.setItem('ps_roles', JSON.stringify(roles)); }
+
+  function openCreateRole() {
+    editingRoleIndex = -1;
+    document.querySelector('#createRoleModal h2').textContent = 'Create Role';
+    document.querySelector('#createRoleModal .btn-primary').textContent = 'Create Role';
+    document.getElementById('newRoleName').value = '';
+    selectedRoleColor = '#3ddc84';
+    document.querySelectorAll('.role-color-opt').forEach(el => el.classList.remove('selected'));
+    const first = document.querySelector('.role-color-opt');
+    if(first) first.classList.add('selected');
+    ['manage_staff','moderate','forms','kb','sessions'].forEach(p => { const el = document.getElementById('perm_'+p); if(el) el.checked = false; });
+    openModal('createRoleModal');
+  }
+
+  function openEditRole(i) {
+    editingRoleIndex = i;
+    const r = roles[i];
+    document.querySelector('#createRoleModal h2').textContent = 'Edit Role';
+    document.querySelector('#createRoleModal .btn-primary').textContent = 'Save Role';
+    document.getElementById('newRoleName').value = r.name;
+    selectedRoleColor = r.color;
+    document.querySelectorAll('.role-color-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.color === r.color);
+    });
+    const permMap = {manage_staff:'Manage Staff',moderate:'Moderate Players',forms:'Manage Forms',kb:'Edit Knowledge Base',sessions:'Host Sessions'};
+    Object.entries(permMap).forEach(([key, label]) => {
+      const el = document.getElementById('perm_'+key);
+      if(el) el.checked = r.perms.includes(label);
+    });
+    openModal('createRoleModal');
+  }
+
+  function selectRoleColor(el) {
+    document.querySelectorAll('.role-color-opt').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedRoleColor = el.dataset.color;
+  }
+
+  function createRole() {
+    const name = document.getElementById('newRoleName').value.trim();
+    if(!name) { showToast('Enter a role name'); return; }
+    const perms = [];
+    if(document.getElementById('perm_manage_staff').checked) perms.push('Manage Staff');
+    if(document.getElementById('perm_moderate').checked) perms.push('Moderate Players');
+    if(document.getElementById('perm_forms').checked) perms.push('Manage Forms');
+    if(document.getElementById('perm_kb').checked) perms.push('Edit Knowledge Base');
+    if(document.getElementById('perm_sessions').checked) perms.push('Host Sessions');
+    if(editingRoleIndex >= 0) {
+      roles[editingRoleIndex] = {name, color: selectedRoleColor, perms};
+      showToast('Role "' + name + '" updated');
+    } else {
+      roles.push({name, color: selectedRoleColor, perms});
+      showToast('Role "' + name + '" created');
+    }
+    saveRoles();
+    renderRoles();
+    closeModal('createRoleModal');
+  }
+
+  function renderRoles() {
+    const el = document.getElementById('rolesList');
+    if(!el) return;
+    if(roles.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:13px;">No roles yet. Create one above.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    roles.forEach((r, i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;';
+      const permsHtml = r.perms.length
+        ? r.perms.map(p => `<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.05);color:#888;">${p}</span>`).join('')
+        : '<span style="font-size:11px;color:#444;">No permissions</span>';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:14px;height:14px;border-radius:50%;background:${r.color};flex-shrink:0;box-shadow:0 0 6px ${r.color}66;"></div>
+          <div>
+            <div style="font-size:15px;font-weight:700;">${escHtml(r.name)}</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">${permsHtml}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="icon-btn" onclick="openEditRole(${i})">✏ Edit</button>
+          <button class="icon-btn danger" onclick="deleteRole(${i})">🗑 Delete</button>
+        </div>`;
+      el.appendChild(div);
+    });
+  }
+
+  function deleteRole(i) {
+    const name = roles[i].name;
+    roles.splice(i, 1);
+    saveRoles();
+    renderRoles();
+    showToast('Role "' + name + '" deleted');
+  }
+
+  // Render roles on init if any saved
+  renderRoles();
+
+  // ── Sessions ──
+  function openNewSession() { openModal('newSessionModal'); }
+  function startSession() {
+    const name = document.getElementById('sessionName').value.trim();
+    const host = document.getElementById('sessionHost').value.trim() || 'You';
+    if(!name) { showToast('Enter a session name'); return; }
+    const grid = document.getElementById('sessionGrid');
+    const card = document.createElement('div');
+    card.className = 'session-card';
+    card.innerHTML = `<div class="session-status live">● LIVE</div><div class="session-name">${escHtml(name)}</div><div class="session-meta">Hosted by ${escHtml(host)} · 1 attendee</div><div style="margin-top:10px;"><button class="btn-secondary" style="font-size:12px;padding:6px 12px;">Join</button></div>`;
+    grid.insertBefore(card, grid.firstChild);
+    closeModal('newSessionModal');
+    document.getElementById('sessionName').value = '';
+    document.getElementById('sessionHost').value = '';
+    showToast('Session started!');
+  }
+
+  // ── Workspace creation ──
+  function openCreateWs() { openModal('createWsModal'); }
+  function createWorkspace() {
+    const name = document.getElementById('newWsName').value.trim();
+    if(!name) { showToast('Enter a workspace name'); return; }
+    const id = 'ws' + Date.now();
+    workspaces.push({name, id});
+    activeWs = id;
+    saveWorkspaces();
+    updateWsView();
+    document.getElementById('homeWsName').textContent = '🏠 ' + name;
+    closeModal('createWsModal');
+    document.getElementById('newWsName').value = '';
+    document.getElementById('newWsGameId').value = '';
+    document.getElementById('newWsDesc').value = '';
+    showToast('Workspace "' + name + '" created!');
+    // Open the new workspace
+    openWorkspace(id);
+  }
+
+  // ── Settings ──
+  function saveSettings() {
+    const name = document.getElementById('settingsWsName').value.trim();
+    if(name) {
+      const ws = workspaces.find(w => w.id === activeWs);
+      if(ws) { ws.name = name; saveWorkspaces(); renderWsTabs(); document.getElementById('homeWsName').textContent = '🏠 ' + name; }
+    }
+    showToast('Settings saved');
+  }
+
+  // ── App Store ──
+  function installApp(btn, name) {
+    btn.textContent = 'Installed';
+    btn.className = 'btn-secondary';
+    btn.onclick = null;
+    showToast(name + ' installed!');
+  }
+
+  let attendanceInstalled = localStorage.getItem('ps_attendance_installed') === '1';
+  let attendanceSheets = JSON.parse(localStorage.getItem('ps_att_sheets') || '[]');
+  let attTempStaff = []; // staff rows in the current sheet being edited
+
+  function installAttendance() {
+    attendanceInstalled = true;
+    localStorage.setItem('ps_attendance_installed', '1');
+    document.getElementById('sb-attendance').style.display = 'flex';
+    const btn = document.getElementById('attendanceInstallBtn');
+    btn.textContent = 'Installed';
+    btn.className = 'btn-secondary';
+    btn.onclick = null;
+    renderAttendanceSheets();
+    showToast('Meeting Attendance installed!');
+  }
+
+  // Restore install state
+  if(attendanceInstalled) {
+    document.getElementById('sb-attendance').style.display = 'flex';
+    const btn = document.getElementById('attendanceInstallBtn');
+    if(btn) { btn.textContent = 'Installed'; btn.className = 'btn-secondary'; btn.onclick = null; }
+  }
+
+  function openNewAttendance() {
+    attTempStaff = [];
+    // Pre-populate with staff from staff table
+    document.querySelectorAll('#staffTableBody tr').forEach(tr => {
+      const user = tr.cells[0]?.textContent.trim();
+      if(user) attTempStaff.push(user);
+    });
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('attDate').value = today;
+    document.getElementById('attMeetingName').value = '';
+    document.getElementById('attAddStaff').value = '';
+    renderAttStaffChecks();
+    document.getElementById('attendanceForm').style.display = 'block';
+    document.getElementById('attendanceForm').scrollIntoView({behavior:'smooth'});
+  }
+
+  function renderAttStaffChecks() {
+    const el = document.getElementById('attStaffChecks');
+    if(attTempStaff.length === 0) {
+      el.innerHTML = '<div style="font-size:12px;color:#555;">No staff added yet.</div>';
+      return;
+    }
+    el.innerHTML = attTempStaff.map((u,i) => `
+      <div style="display:flex;align-items:center;gap:10px;background:#161616;border:1px solid #1e1e1e;border-radius:7px;padding:8px 12px;">
+        <div style="flex:1;font-size:13.5px;">${escHtml(u)}</div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:#3ddc84;">
+          <input type="radio" name="att_${i}" value="present" checked style="accent-color:#3ddc84;"> Present
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:#f5a623;">
+          <input type="radio" name="att_${i}" value="late" style="accent-color:#f5a623;"> Late
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:#e05555;">
+          <input type="radio" name="att_${i}" value="absent" style="accent-color:#e05555;"> Absent
+        </label>
+        <button class="icon-btn danger" onclick="attRemoveStaff(${i})" style="padding:4px 7px;">✕</button>
+      </div>`).join('');
+  }
+
+  function attAddManualStaff() {
+    const val = document.getElementById('attAddStaff').value.trim();
+    if(!val) return;
+    if(!attTempStaff.includes(val)) {
+      attTempStaff.push(val);
+      renderAttStaffChecks();
+    }
+    document.getElementById('attAddStaff').value = '';
+  }
+
+  function attRemoveStaff(i) {
+    attTempStaff.splice(i, 1);
+    renderAttStaffChecks();
+  }
+
+  function saveAttendanceSheet() {
+    const name = document.getElementById('attMeetingName').value.trim() || 'Staff Meeting';
+    const date = document.getElementById('attDate').value || 'Unknown Date';
+    const attendance = attTempStaff.map((u, i) => {
+      const radios = document.querySelectorAll(`input[name="att_${i}"]`);
+      let status = 'present';
+      radios.forEach(r => { if(r.checked) status = r.value; });
+      return {user: u, status};
+    });
+    const sheet = {id: 'att_'+Date.now(), name, date, attendance};
+    attendanceSheets.unshift(sheet);
+    localStorage.setItem('ps_att_sheets', JSON.stringify(attendanceSheets));
+    document.getElementById('attendanceForm').style.display = 'none';
+    renderAttendanceSheets();
+    showToast('Attendance saved for "' + name + '"');
+  }
+
+  function renderAttendanceSheets() {
+    const el = document.getElementById('attendanceSheets');
+    if(!el) return;
+    if(attendanceSheets.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:13px;">No attendance records yet.</div>';
+      return;
+    }
+    el.innerHTML = attendanceSheets.map((s, si) => {
+      const present = s.attendance.filter(a => a.status==='present').length;
+      const late    = s.attendance.filter(a => a.status==='late').length;
+      const absent  = s.attendance.filter(a => a.status==='absent').length;
+      const rows = s.attendance.map(a => {
+        const color = a.status==='present'?'#3ddc84':a.status==='late'?'#f5a623':'#e05555';
+        const label = a.status.charAt(0).toUpperCase()+a.status.slice(1);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid #1a1a1a;">
+          <span style="font-size:13px;">${escHtml(a.user)}</span>
+          <span style="font-size:11px;font-weight:700;color:${color};">${label}</span>
+        </div>`;
+      }).join('');
+      return `<div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+        <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:15px;font-weight:700;">${escHtml(s.name)}</div>
+            <div style="font-size:12px;color:#666;margin-top:2px;">${escHtml(s.date)}</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span style="font-size:12px;color:#3ddc84;">✔ ${present} Present</span>
+            <span style="font-size:12px;color:#f5a623;">⏰ ${late} Late</span>
+            <span style="font-size:12px;color:#e05555;">✗ ${absent} Absent</span>
+            <button class="icon-btn danger" onclick="deleteAttSheet(${si})">🗑</button>
+          </div>
+        </div>
+        <div style="border-top:1px solid #1a1a1a;">${rows}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function deleteAttSheet(i) {
+    attendanceSheets.splice(i, 1);
+    localStorage.setItem('ps_att_sheets', JSON.stringify(attendanceSheets));
+    renderAttendanceSheets();
+    showToast('Attendance record deleted');
+  }
+
+  // Render on init
+  renderAttendanceSheets();
+
+  // ── Helpers ──
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-bg').forEach(bg => bg.addEventListener('click', e => { if(e.target === bg) bg.classList.remove('open'); }));
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+  }
+
+  // Init — check login state
+  if(psCurrentUser) {
+    document.getElementById('navAccount').textContent = psCurrentUser.name;
+    document.getElementById('navStaffDash').style.display =
+      psCurrentUser.email === ADMIN_EMAIL ? 'list-item' : 'none';
+    if(workspaces.length && activeWs) {
+      const ws = workspaces.find(w => w.id === activeWs);
+      if(ws) document.getElementById('homeWsName').textContent = '🏠 ' + ws.name;
+    }
+    showPage('wsPicker');
+  }
+  // else authPage stays active (default)
+</script>
+</body>
+</html>
