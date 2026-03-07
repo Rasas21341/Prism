@@ -97,6 +97,16 @@
     /* Staff Dashboard */
     #staffDashPage { display: none !important; }
     #staffDashPage.active { display: block !important; min-height: calc(100vh - 60px); }
+    #publicFormPage { display: none !important; }
+    #publicFormPage.active { display: block !important; min-height: 100vh; background: #0a0a0a; }
+    .pub-q { margin-bottom: 20px; }
+    .pub-q-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .pub-q input[type="text"], .pub-q textarea { width: 100%; background: #111; border: 1px solid #252525; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #fff; outline: none; font-family: inherit; }
+    .pub-q input:focus, .pub-q textarea:focus { border-color: #3ddc84; }
+    .pub-q textarea { min-height: 100px; resize: vertical; }
+    .pub-opt { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #111; border: 1px solid #1e1e1e; border-radius: 8px; margin-bottom: 6px; cursor: pointer; }
+    .pub-opt:hover { border-color: #3ddc84; }
+    .pub-opt input { accent-color: #3ddc84; }
     /* ── WORKSPACE PAGE ── */
     #wsPage { display: none !important; }
     #wsPage.active { display: flex !important; flex-direction: column; height: calc(100vh - 60px); }
@@ -422,6 +432,21 @@
           Already have an account? <a href="#" onclick="showAuthTab('login');return false;" style="color:#3ddc84;text-decoration:none;font-weight:600;">Sign in</a>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PUBLIC FORM PAGE ══════════ -->
+<div id="publicFormPage" class="page">
+  <div style="max-width:600px;margin:0 auto;padding:40px 24px 80px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:28px;font-weight:800;margin-bottom:8px;" id="pubFormTitle">Form</div>
+      <div style="color:#666;font-size:14px;" id="pubFormDesc">Fill out this form</div>
+    </div>
+    <div id="pubFormContent"></div>
+    <div id="pubFormSuccess" style="display:none;text-align:center;padding:32px;background:#111;border:1px solid #1e1e1e;border-radius:12px;">
+      <div style="font-size:24px;margin-bottom:8px;">✅ Submitted!</div>
+      <div style="color:#666;font-size:14px;">Thank you for your submission.</div>
     </div>
   </div>
 </div>
@@ -779,6 +804,7 @@
           </div>
         </div>
         <div id="formsList"></div>
+        <div id="formsListNoAcc" style="display:none;"></div>
       </div>
 
       <!-- FORM EDITOR -->
@@ -1426,7 +1452,7 @@
 
   // ── Forms ──
   // ── Forms data store ──
-  let formsData = {}; // id -> {name, vis, questions:[], access:[]}
+  let formsData = JSON.parse(localStorage.getItem('ps_forms') || '{}');
   let editingFormId = null;
 
   function openCreateForm() { openModal('createFormModal'); }
@@ -1435,8 +1461,10 @@
     const name = document.getElementById('newFormName').value.trim();
     const vis  = document.getElementById('newFormVisibility').value;
     if(!name) { showToast('Enter a form name'); return; }
-    const id = 'form_' + Date.now();
+    // Generate random short ID (8 chars)
+    const id = Math.random().toString(36).substring(2, 10);
     formsData[id] = {name, vis, questions:[], access:[]};
+    localStorage.setItem('ps_forms', JSON.stringify(formsData));
     renderFormItem(id);
     document.getElementById('statForms').textContent = Object.keys(formsData).length;
     closeModal('createFormModal');
@@ -1460,10 +1488,70 @@
         <div class="form-item-meta">${f.questions.length} question${f.questions.length!==1?'s':''} · 0 submissions</div>
       </div>
       <div class="form-item-actions">
-        <button class="icon-btn" onclick="openFormEditor('${id}')">✏ Edit</button>
+          <button class="icon-btn" onclick="openFormEditor('${id}')">✏ Edit</button>
+        <button class="icon-btn" onclick="copyFormLink('${id}')">🔗 Copy Link</button>
         <button class="icon-btn">↔ Responses</button>
         <button class="icon-btn danger" onclick="deleteForm('${id}')">🗑</button>
       </div>`;
+  }
+
+  const APP_URL = 'https://prism-six-psi.vercel.app/';
+
+  function copyFormLink(id) {
+    const link = `${APP_URL}#form=${id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      showToast('Link copied to clipboard!');
+    }).catch(() => {
+      prompt('Copy this link:', link);
+    });
+  }
+
+  // Load form data from hash on page load
+  (function checkHash() {
+    const hash = window.location.hash;
+    if(hash.startsWith('#form=')) {
+      const formId = hash.replace('#form=', '');
+      showPublicForm(formId);
+    }
+  })();
+
+  function showPublicForm(id) {
+    const form = formsData[id];
+    if(!form) {
+      document.getElementById('pubFormTitle').textContent = 'Form Not Found';
+      document.getElementById('pubFormDesc').textContent = 'This form may have been deleted.';
+      document.getElementById('publicFormPage').classList.add('active');
+      return;
+    }
+    document.getElementById('pubFormTitle').textContent = form.name;
+    document.getElementById('pubFormDesc').textContent = form.vis === 'Public' ? 'Public form' : 'This form is private';
+    // Render questions
+    const el = document.getElementById('pubFormContent');
+    if(form.questions.length === 0) {
+      el.innerHTML = '<div style="text-align:center;color:#666;padding:32px;">No questions in this form yet.</div>';
+    } else {
+      el.innerHTML = form.questions.map((q, i) => {
+        if(q.type === 'short') {
+          return `<div class="pub-q"><label class="pub-q-label">${i+1}. ${escHtml(q.text)}</label><input type="text" placeholder="Your answer" id="pub_a_${i}"/></div>`;
+        } else if(q.type === 'paragraph') {
+          return `<div class="pub-q"><label class="pub-q-label">${i+1}. ${escHtml(q.text)}</label><textarea placeholder="Your answer" id="pub_a_${i}"></textarea></div>`;
+        } else if(q.type === 'multiple') {
+          return `<div class="pub-q"><label class="pub-q-label">${i+1}. ${escHtml(q.text)}</label>${(q.options||[]).map((o, oi)=>`<label class="pub-opt"><input type="radio" name="pub_q_${i}" value="${escHtml(o)}"> ${escHtml(o)}</label>`).join('')}</div>`;
+        } else if(q.type === 'checkbox') {
+          return `<div class="pub-q"><label class="pub-q-label">${i+1}. ${escHtml(q.text)}</label>${(q.options||[]).map((o, oi)=>`<label class="pub-opt"><input type="checkbox" name="pub_q_${i}" value="${escHtml(o)}"> ${escHtml(o)}</label>`).join('')}</div>`;
+        }
+        return '';
+      }).join('') + '<button class="btn-primary" style="width:100%;padding:14px;font-size:16px;margin-top:16px;" onclick="submitPublicForm()">Submit</button>';
+    }
+    document.getElementById('pubFormSuccess').style.display = 'none';
+    document.getElementById('pubFormContent').style.display = 'block';
+    document.getElementById('publicFormPage').classList.add('active');
+  }
+
+  function submitPublicForm() {
+    document.getElementById('pubFormContent').style.display = 'none';
+    document.getElementById('pubFormSuccess').style.display = 'block';
+    showToast('Form submitted!');
   }
 
   function deleteForm(id) {
@@ -1929,8 +2017,14 @@
     return s.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
   }
 
-  // Init — check login state
-  if(psCurrentUser) {
+  // Init — check login state and hash routing
+  const initHash = window.location.hash;
+  if(initHash.startsWith('#form=')) {
+    // Public form page — no login needed
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('publicFormPage').classList.add('active');
+    document.getElementById('nav').style.display = 'none'; // Hide nav for public forms
+  } else if(psCurrentUser) {
     document.getElementById('navAccount').textContent = psCurrentUser.name;
     document.getElementById('navStaffDash').style.display =
       psCurrentUser.email === ADMIN_EMAIL ? 'list-item' : 'none';
