@@ -1621,10 +1621,11 @@
       </div>`;
   }
 
-  const APP_URL = 'https://prism-six-psi.vercel.app/';
+  // Use current page URL for form links
+  const getAppUrl = () => window.location.protocol + '//' + window.location.host + window.location.pathname;
 
   function copyFormLink(id) {
-    const link = `${APP_URL}#form=${id}`;
+    const link = `${getAppUrl()}#form=${id}`;
     navigator.clipboard.writeText(link).then(() => {
       showToast('Link copied to clipboard!');
     }).catch(() => {
@@ -1744,7 +1745,7 @@
     renderFormItem(editingFormId);
     showToast('Form saved!');
     closeFormEditor();
-    localStorage.setItem('ps_forms', JSON.stringify(formsData));
+    saveFormsData();
   }
 
   function switchEditorTab(name, el) {
@@ -1765,7 +1766,7 @@
       let optionsHtml = '';
       if(q.type === 'multiple' || q.type === 'checkbox') {
         optionsHtml = `<div id="opts_${i}" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
-          ${(q.options||[]).map((o,oi)=>`<div style="display:flex;gap:6px;align-items:center;"><input class="field-input" style="flex:1;" value="${escHtml(o)}" oninput="formsData[editingFormId].questions[${i}].options[${oi}]=this.value"/><button class="icon-btn danger" onclick="removeOption(${i},${oi})">✕</button></div>`).join('')}
+          ${(q.options||[]).map((o,oi)=>`<div style="display:flex;gap:6px;align-items:center;"><input class="field-input" style="flex:1;" value="${escHtml(o)}" oninput="formsData[editingFormId].questions[${i}].options[${oi}]=this.value;saveFormsData();"/><button class="icon-btn danger" onclick="removeOption(${i},${oi})">✕</button></div>`).join('')}
         </div>
         <button class="btn-secondary" style="font-size:11px;padding:5px 10px;margin-top:6px;" onclick="addOption(${i})">+ Add Option</button>`;
       }
@@ -1774,7 +1775,7 @@
           <span style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:0.07em;">${q.type==='short'?'Short Answer':q.type==='paragraph'?'Paragraph':q.type==='multiple'?'Multiple Choice':'Checkboxes'}</span>
           <button class="icon-btn danger" onclick="removeQuestion(${i})">🗑 Remove</button>
         </div>
-        <input class="field-input" placeholder="Question text" value="${escHtml(q.text)}" oninput="formsData[editingFormId].questions[${i}].text=this.value"/>
+        <input class="field-input" placeholder="Question text" value="${escHtml(q.text)}" oninput="formsData[editingFormId].questions[${i}].text=this.value;saveFormsData();"/>
         ${optionsHtml}`;
       el.appendChild(div);
     });
@@ -1783,25 +1784,33 @@
     }
   }
 
+  function saveFormsData() {
+    localStorage.setItem('ps_forms', JSON.stringify(formsData));
+  }
+
   function addQuestion(type) {
     if(!editingFormId) return;
     const q = {type, text:'', options: (type==='multiple'||type==='checkbox') ? ['Option 1'] : []};
     formsData[editingFormId].questions.push(q);
+    saveFormsData();
     renderEditorQuestions();
   }
 
   function removeQuestion(i) {
     formsData[editingFormId].questions.splice(i,1);
+    saveFormsData();
     renderEditorQuestions();
   }
 
   function addOption(qi) {
     formsData[editingFormId].questions[qi].options.push('Option ' + (formsData[editingFormId].questions[qi].options.length+1));
+    saveFormsData();
     renderEditorQuestions();
   }
 
   function removeOption(qi, oi) {
     formsData[editingFormId].questions[qi].options.splice(oi,1);
+    saveFormsData();
     renderEditorQuestions();
   }
 
