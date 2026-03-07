@@ -1106,31 +1106,48 @@
   // ── Supabase Setup ──
   const SUPABASE_URL = 'https://xzyqwkqaqtfwxalnqckb.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_Oce6lAv7FY-7thaFiQ-fFw_B3mBS26u';
-  let supabase;
-  try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } catch(e) { console.log('Supabase init error:', e); }
+  let supabase = null;
+
+  function initSupabase() {
+    if(typeof window.supabase !== 'undefined') {
+      try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase connected');
+      } catch(e) { console.log('Supabase init error:', e); }
+    }
+  }
 
   // Helper: Save to Supabase
   async function sbSave(table, data) {
-    if(!supabase) return false;
-    const { error } = await supabase.from(table).upsert(data);
-    if(error) console.error('Supabase save error:', error);
-    return !error;
+    if(!supabase) { console.log('Supabase not connected'); return false; }
+    try {
+      const { error } = await supabase.from(table).upsert(data);
+      if(error) console.error('Supabase save error:', error);
+      return !error;
+    } catch(e) { console.log('sbSave error:', e); return false; }
   }
 
   // Helper: Load from Supabase
   async function sbLoad(table, filter) {
     if(!supabase) return [];
-    let query = supabase.from(table).select('*');
-    if(filter) {
-      for(const [key, val] of Object.entries(filter)) {
-        query = query.eq(key, val);
+    try {
+      let query = supabase.from(table).select('*');
+      if(filter) {
+        for(const [key, val] of Object.entries(filter)) {
+          query = query.eq(key, val);
+        }
       }
-    }
-    const { data, error } = await query;
-    if(error) console.error('Supabase load error:', error);
-    return data || [];
+      const { data, error } = await query;
+      if(error) console.error('Supabase load error:', error);
+      return data || [];
+    } catch(e) { console.log('sbLoad error:', e); return []; }
+  }
+
+  // Initialize Supabase when DOM ready
+  if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSupabase);
+  } else {
+    initSupabase();
   }
 
   // ── Auth ──
