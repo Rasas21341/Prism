@@ -444,6 +444,8 @@
       <div style="color:#666;font-size:14px;" id="pubFormDesc">Fill out this form</div>
     </div>
     <div id="pubFormContent"></div>
+    <!-- Debug info -->
+    <div id="pubFormDebug" style="display:none;margin-top:40px;padding:16px;background:#1a1a1a;border:1px solid #333;border-radius:8px;font-size:12px;color:#888;"></div>
     <div id="pubFormSuccess" style="display:none;text-align:center;padding:32px;background:#111;border:1px solid #1e1e1e;border-radius:12px;">
       <div style="font-size:24px;margin-bottom:8px;">✅ Submitted!</div>
       <div style="color:#666;font-size:14px;">Thank you for your submission.</div>
@@ -1635,10 +1637,12 @@
 
   // Public form rendering (called from init if hash is present)
   function showPublicForm(id) {
+    console.log('showPublicForm called with id:', id);
+    console.log('formsData:', formsData);
     const form = formsData[id];
     if(!form) {
       document.getElementById('pubFormTitle').textContent = 'Form Not Found';
-      document.getElementById('pubFormDesc').textContent = 'This form may have been deleted.';
+      document.getElementById('pubFormDesc').textContent = 'This form may have been deleted. Form ID: ' + id;
       document.getElementById('publicFormPage').classList.add('active');
       return;
     }
@@ -1646,7 +1650,8 @@
     document.getElementById('pubFormDesc').textContent = form.vis === 'Public' ? 'Public form' : 'This form is private';
     // Render questions
     const el = document.getElementById('pubFormContent');
-    if(form.questions.length === 0) {
+    console.log('Form questions:', form.questions);
+    if(!form.questions || form.questions.length === 0) {
       el.innerHTML = '<div style="text-align:center;color:#666;padding:32px;">No questions in this form yet.</div>';
     } else {
       el.innerHTML = form.questions.map((q, i) => {
@@ -1665,6 +1670,10 @@
     document.getElementById('pubFormSuccess').style.display = 'none';
     document.getElementById('pubFormContent').style.display = 'block';
     document.getElementById('publicFormPage').classList.add('active');
+    // Show debug info
+    const debugEl = document.getElementById('pubFormDebug');
+    debugEl.style.display = 'block';
+    debugEl.innerHTML = '<strong>Debug Info:</strong><br>Form ID: ' + id + '<br>Questions count: ' + (form.questions ? form.questions.length : 0) + '<br>Visibility: ' + form.vis + '<br><br><strong>Form Data:</strong><pre>' + escHtml(JSON.stringify(form, null, 2)) + '</pre>';
   }
 
   function submitPublicForm() {
@@ -2187,12 +2196,16 @@
 
   // Init — check login state and hash routing
   const initHash = window.location.hash;
+  alert('Page loaded, hash: ' + initHash);
+  console.log('Init hash:', initHash);
   if(initHash.startsWith('#form=')) {
     // Public form page — no login needed
+    console.log('Loading public form...');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('publicFormPage').classList.add('active');
     document.getElementById('nav').style.display = 'none'; // Hide nav for public forms
     const formId = initHash.replace('#form=', '');
+    console.log('Form ID:', formId);
     showPublicForm(formId); // Load the form
   } else if(psCurrentUser) {
     document.getElementById('navAccount').textContent = psCurrentUser.name;
