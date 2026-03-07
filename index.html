@@ -1103,6 +1103,36 @@
 </style>
 
 <script>
+  // ── Supabase Setup ──
+  const SUPABASE_URL = 'https://xzyqwkqaqtfwxalnqckb.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Oce6lAv7FY-7thaFiQ-fFw_B3mBS26u';
+  let supabase;
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) { console.log('Supabase init error:', e); }
+
+  // Helper: Save to Supabase
+  async function sbSave(table, data) {
+    if(!supabase) return false;
+    const { error } = await supabase.from(table).upsert(data);
+    if(error) console.error('Supabase save error:', error);
+    return !error;
+  }
+
+  // Helper: Load from Supabase
+  async function sbLoad(table, filter) {
+    if(!supabase) return [];
+    let query = supabase.from(table).select('*');
+    if(filter) {
+      for(const [key, val] of Object.entries(filter)) {
+        query = query.eq(key, val);
+      }
+    }
+    const { data, error } = await query;
+    if(error) console.error('Supabase load error:', error);
+    return data || [];
+  }
+
   // ── Auth ──
   let psAccounts = JSON.parse(localStorage.getItem('ps_accounts') || '[]');
   let psCurrentUser = JSON.parse(localStorage.getItem('ps_current_user') || 'null');
@@ -1471,18 +1501,24 @@
   let formsData = JSON.parse(localStorage.getItem('ps_forms') || '{}');
   let formResponses = JSON.parse(localStorage.getItem('ps_form_responses') || '[]');
 
-  function renderResponses() {
+  async function renderResponses() {
     const el = document.getElementById('responsesList');
     if(!el) return;
-    if(formResponses.length === 0) {
+    // Load from Supabase
+    const supabaseResponses = await sbLoad('form_responses', {workspace_id: activeWs});
+    // Merge with local
+    const localOnly = formResponses.filter(r => !supabaseResponses.find(sr => sr.form_id === r.formId));
+    const allResponses = [...supabaseResponses.map(r => ({...r, answers: JSON.parse(r.answers || '{}')})), ...localOnly];
+    if(allResponses.length === 0) {
       el.innerHTML = '<div style="color:#555;font-size:13px;">No form submissions yet.</div>';
       return;
     }
     // Group by form
     const byForm = {};
-    formResponses.forEach(r => {
-      if(!byForm[r.formId]) byForm[r.formId] = [];
-      byForm[r.formId].push(r);
+    allResponses.forEach(r => {
+      const fid = r.form_id || r.formId;
+      if(!byForm[fid]) byForm[fid] = [];
+      byForm[fid].push(r);
     });
     el.innerHTML = Object.entries(byForm).map(([formId, reps]) => {
       const form = formsData[formId];
@@ -1532,7 +1568,7 @@
     if(!name) { showToast('Enter a form name'); return; }
     // Generate random short ID (8 chars)
     const id = Math.random().toString(36).substring(2, 10);
-    formsData[id] = {name, vis, questions:[], access:[]};
+    formsData[id] = {name, vis, questions:[], access:[], workspaceId: activeWs};
     localStorage.setItem('ps_forms', JSON.stringify(formsData));
     renderFormItem(id);
     const stat = document.getElementById('statForms');
@@ -1632,11 +1668,15 @@
     });
     const response = {
       id: 'resp_' + Date.now(),
-      formId,
-      answers,
-      submittedAt: new Date().toISOString()
+      form_id: formId,
+      workspace_id: form.workspaceId || activeWs || 'unknown',
+      answers: JSON.stringify(answers),
+      submitted_at: new Date().toISOString()
     };
-    formResponses.push(response);
+    // Save to Supabase
+    sbSave('form_responses', response);
+    // Also keep local backup
+    formResponses.push({formId, answers, submittedAt: new Date().toISOString()});
     localStorage.setItem('ps_form_responses', JSON.stringify(formResponses));
     document.getElementById('pubFormContent').style.display = 'none';
     document.getElementById('pubFormSuccess').style.display = 'block';
