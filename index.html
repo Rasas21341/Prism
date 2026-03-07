@@ -2196,14 +2196,13 @@
 
   // Init — check login state and hash routing
   const initHash = window.location.hash;
-  alert('Page loaded, hash: ' + initHash);
   console.log('Init hash:', initHash);
   if(initHash.startsWith('#form=')) {
     // Public form page — no login needed
     console.log('Loading public form...');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('publicFormPage').classList.add('active');
-    document.getElementById('nav').style.display = 'none'; // Hide nav for public forms
+    if(document.getElementById('nav')) document.getElementById('nav').style.display = 'none'; // Hide nav for public forms
     const formId = initHash.replace('#form=', '');
     console.log('Form ID:', formId);
     showPublicForm(formId); // Load the form
