@@ -1332,6 +1332,8 @@
     document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
     document.getElementById('ch-' + name).classList.add('active');
     el.classList.add('active');
+    // Refresh forms list when switching to forms channel
+    if(name === 'forms') renderAllForms();
   }
 
   // ── Moderation tabs ──
@@ -1453,6 +1455,14 @@
   // ── Forms ──
   // ── Forms data store ──
   let formsData = JSON.parse(localStorage.getItem('ps_forms') || '{}');
+
+  // Always load formsData from localStorage on init (for public form links)
+  (function loadForms() {
+    const stored = localStorage.getItem('ps_forms');
+    if(stored) {
+      try { formsData = JSON.parse(stored); } catch(e) { formsData = {}; }
+    }
+  })();
   let editingFormId = null;
 
   function openCreateForm() { openModal('createFormModal'); }
@@ -1466,7 +1476,8 @@
     formsData[id] = {name, vis, questions:[], access:[]};
     localStorage.setItem('ps_forms', JSON.stringify(formsData));
     renderFormItem(id);
-    document.getElementById('statForms').textContent = Object.keys(formsData).length;
+    const stat = document.getElementById('statForms');
+    if(stat) stat.textContent = Object.keys(formsData).length;
     closeModal('createFormModal');
     document.getElementById('newFormName').value = '';
     showToast('Form created');
@@ -1474,13 +1485,17 @@
 
   function renderFormItem(id) {
     const f = formsData[id];
+    if(!f) return;
+    const list = document.getElementById('formsList');
+    if(!list) return; // Not on forms page
     const existing = document.getElementById('fi_'+id);
     const div = existing || document.createElement('div');
     if(!existing) {
       div.id = 'fi_' + id;
       div.className = 'form-item';
-      document.getElementById('formsList').appendChild(div);
+      list.appendChild(div);
     }
+    localStorage.setItem('ps_forms', JSON.stringify(formsData));
     div.innerHTML = `
       <div class="form-item-left">
         <div class="form-item-name">${escHtml(f.name)}</div>
@@ -1558,7 +1573,9 @@
     const el = document.getElementById('fi_'+id);
     if(el) el.remove();
     delete formsData[id];
-    document.getElementById('statForms').textContent = Object.keys(formsData).length;
+    localStorage.setItem('ps_forms', JSON.stringify(formsData));
+    const stat = document.getElementById('statForms');
+    if(stat) stat.textContent = Object.keys(formsData).length;
     showToast('Form deleted');
   }
 
@@ -1597,6 +1614,7 @@
     renderFormItem(editingFormId);
     showToast('Form saved!');
     closeFormEditor();
+    localStorage.setItem('ps_forms', JSON.stringify(formsData));
   }
 
   function switchEditorTab(name, el) {
@@ -1804,6 +1822,17 @@
 
   // Render roles on init if any saved
   renderRoles();
+
+  // Render forms on init (from localStorage)
+  function renderAllForms() {
+    const list = document.getElementById('formsList');
+    if(!list) return; // Not on workspace page yet
+    list.innerHTML = '';
+    Object.keys(formsData).forEach(id => renderFormItem(id));
+    const stat = document.getElementById('statForms');
+    if(stat) stat.textContent = Object.keys(formsData).length;
+  }
+  renderAllForms();
 
   // ── Sessions ──
   function openNewSession() { openModal('newSessionModal'); }
