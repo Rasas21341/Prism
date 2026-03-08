@@ -1750,11 +1750,24 @@
       const staff = staffData.find(s => s.id === staffId);
       if (staff) {
         staff.order = index;
+        // Save to Supabase
+        saveStaffOrderToSupabase(staffId, index);
       }
     });
     
     localStorage.setItem('ps_staff', JSON.stringify(staffData));
     showToast('Staff order updated');
+  }
+
+  // Save staff order to Supabase
+  async function saveStaffOrderToSupabase(staffId, order) {
+    if(!supabase) return;
+    try {
+      await supabase.from('staff').upsert({
+        id: staffId,
+        order: order
+      });
+    } catch(e) { console.log('Save order error:', e); }
   }
   
   function removeStaff(id) {
@@ -1803,6 +1816,7 @@
               rank: s.rank,
               joined: s.joined,
               status: s.status,
+              order: s.order || 999,
               workspaceId: s.workspace_id
             });
           }
@@ -1822,6 +1836,7 @@
         rank: staff.rank,
         joined: staff.joined,
         status: staff.status,
+        order: staff.order || 999,
         workspace_id: staff.workspaceId || activeWs
       });
     } catch(e) { console.log('Save staff error:', e); }
