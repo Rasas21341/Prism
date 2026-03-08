@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Prism Space</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
@@ -383,6 +384,30 @@
       <div class="stat-card"><div class="stat-label">Total Accounts</div><div class="stat-value" id="dashTotalAccounts">0</div></div>
       <div class="stat-card"><div class="stat-label">Total Roles</div><div class="stat-value" id="dashTotalRoles">0</div></div>
     </div>
+    
+    <!-- Keys Management Section -->
+    <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:700;">🔑 Workspace Keys</div>
+        <button class="btn-primary" style="font-size:12px;padding:6px 12px;" onclick="openModal('generateKeyModal')">+ Generate New Key</button>
+      </div>
+      <div style="font-size:12px;color:#666;margin-bottom:12px;">Keys are used to create workspaces. Each key can be used once.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;" id="dashKeysList">
+        <!-- Keys will be rendered here -->
+      </div>
+    </div>
+    
+    <!-- Points Management Section -->
+    <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:700;">💰 Points Management</div>
+        <button class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="addPointsToAll()">+ Add 10 Points to All</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;" id="dashPointsList">
+        <!-- Points will be rendered here -->
+      </div>
+    </div>
+    
     <div style="font-size:16px;font-weight:700;margin-bottom:14px;">All Workspaces</div>
     <div id="dashWsList" style="display:flex;flex-direction:column;gap:10px;"></div>
     <div style="font-size:16px;font-weight:700;margin:28px 0 14px;">Registered Accounts</div>
@@ -994,12 +1019,29 @@
 <div class="modal-bg" id="createWsModal">
   <div class="modal">
     <h2>Create a New Workspace</h2>
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:16px;">
+      <div style="font-size:13px;color:#888;margin-bottom:4px;">🔑 Workspace Key Required</div>
+      <div style="font-size:11px;color:#666;">Enter a valid key to create a workspace. Get keys from Staff Dashboard.</div>
+    </div>
+    <div class="field-group"><label class="field-label">Workspace Key</label><input class="field-input" id="newWsKey" placeholder="Enter your workspace key"/></div>
     <div class="field-group"><label class="field-label">Workspace Name</label><input class="field-input" id="newWsName" placeholder="e.g. My Roblox Community"/></div>
     <div class="field-group"><label class="field-label">Roblox Game ID</label><input class="field-input" id="newWsGameId" placeholder="e.g. 123456789"/></div>
     <div class="field-group"><label class="field-label">Description</label><textarea class="field-input" id="newWsDesc" rows="3" placeholder="Describe your workspace..."></textarea></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal('createWsModal')">Cancel</button>
       <button class="btn-primary" onclick="createWorkspace()">Create Workspace</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Key Modal -->
+<div class="modal-bg" id="generateKeyModal">
+  <div class="modal">
+    <h2>Generate Workspace Key</h2>
+    <p style="color:#888;font-size:13px;margin-bottom:16px;">Each key can be used to create one workspace. After using a key, it will be marked as used.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('generateKeyModal')">Cancel</button>
+      <button class="btn-primary" onclick="createNewKey()">Generate Key</button>
     </div>
   </div>
 </div>
@@ -1187,7 +1229,7 @@
     if(pass.length < 6) { errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
     if(pass !== confirm) { errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
     if(psAccounts.find(a => a.email === email)) { errEl.textContent='An account with this email already exists.'; errEl.style.display='block'; return; }
-    const acc = {name, email, password: pass};
+    const acc = {name, email, password: pass, points: 50}; // Start with 50 points
     psAccounts.push(acc);
     localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
     psCurrentUser = acc;
@@ -1202,7 +1244,7 @@
   (function seedAdmin() {
     const exists = psAccounts.find(a => a.email === ADMIN_EMAIL);
     if(!exists) {
-      psAccounts.push({name: 'OceanviewRP Admin', email: ADMIN_EMAIL, password: '123456'});
+      psAccounts.push({name: 'OceanviewRP Admin', email: ADMIN_EMAIL, password: '123456', role: 'Admin', points: 1000});
       localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
     }
   })();
@@ -1281,13 +1323,48 @@
     activeWs = id;
     const ws = workspaces.find(w => w.id === id);
     if(ws) document.getElementById('homeWsName').textContent = '🏠 ' + ws.name;
+    
+    // Load staff from Supabase
+    loadStaffFromSupabase().then(() => {
+      renderAllStaff();
+    });
+    
     showPage('ws');
+  }
+  
+  function renderAllStaff() {
+    const tbody = document.getElementById('staffTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    const wsStaff = staffData.filter(s => s.workspaceId === activeWs);
+    wsStaff.forEach(s => renderStaffMember(s));
+    updateStaffCount();
   }
 
   function renderStaffDash() {
     document.getElementById('dashTotalWs').textContent = workspaces.length;
     document.getElementById('dashTotalAccounts').textContent = psAccounts.length;
     document.getElementById('dashTotalRoles').textContent = roles.length;
+    
+    // Render keys list
+    renderKeysList();
+    
+    // Render points for each account
+    const pl = document.getElementById('dashPointsList');
+    pl.innerHTML = psAccounts.map((a, i) => `
+      <div style="background:#0f0f0f;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${escHtml(a.name)}</div>
+        <div style="font-size:11px;color:#555;margin-bottom:8px;">${escHtml(a.email)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:18px;font-weight:800;color:#3ddc84;">${a.points || 0} pts</span>
+          <div style="display:flex;gap:4px;">
+            <button class="btn-secondary" style="font-size:10px;padding:4px 8px;" onclick="addPoints(${i}, 10)">+10</button>
+            <button class="btn-secondary" style="font-size:10px;padding:4px 8px;" onclick="addPoints(${i}, -10)">-10</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
     // Workspace list
     const wl = document.getElementById('dashWsList');
     if(workspaces.length === 0) {
@@ -1345,6 +1422,79 @@
     localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
     renderStaffDash();
     showToast('Role updated');
+  }
+
+  function addPoints(i, amount) {
+    if(!psAccounts[i].points) psAccounts[i].points = 0;
+    psAccounts[i].points += amount;
+    if(psAccounts[i].points < 0) psAccounts[i].points = 0;
+    localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    // Update current user if it's the same account
+    if(psCurrentUser.email === psAccounts[i].email) {
+      psCurrentUser.points = psAccounts[i].points;
+      localStorage.setItem('ps_current_user', JSON.stringify(psCurrentUser));
+    }
+    renderStaffDash();
+    showToast('Points updated');
+  }
+
+  function addPointsToAll() {
+    psAccounts.forEach((a, i) => {
+      if(!a.points) a.points = 0;
+      a.points += 10;
+    });
+    localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    // Update current user
+    const curr = psAccounts.find(a => a.email === psCurrentUser.email);
+    if(curr) {
+      psCurrentUser.points = curr.points;
+      localStorage.setItem('ps_current_user', JSON.stringify(psCurrentUser));
+    }
+    renderStaffDash();
+    showToast('Added 10 points to all accounts');
+  }
+
+  // ── Workspace Keys Management ──
+  function createNewKey() {
+    const key = 'WSK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    wsKeys.push({
+      key: key,
+      createdAt: new Date().toISOString(),
+      used: false
+    });
+    localStorage.setItem('ps_ws_keys', JSON.stringify(wsKeys));
+    renderStaffDash();
+    closeModal('generateKeyModal');
+    showToast('Key generated: ' + key);
+  }
+
+  function deleteKey(i) {
+    wsKeys.splice(i, 1);
+    localStorage.setItem('ps_ws_keys', JSON.stringify(wsKeys));
+    renderStaffDash();
+    showToast('Key deleted');
+  }
+
+  function renderKeysList() {
+    const el = document.getElementById('dashKeysList');
+    if(!el) return;
+    if(wsKeys.length === 0) {
+      el.innerHTML = '<div style="color:#555;font-size:13px;">No keys generated yet. Click "Generate New Key" to create one.</div>';
+    } else {
+      el.innerHTML = wsKeys.map((k, i) => `
+        <div style="background:#0f0f0f;border:1px solid ${k.used ? '#3ddc84' : '#1e1e1e'};border-radius:10px;padding:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:700;font-family:monospace;color:${k.used ? '#3ddc84' : '#fff'};">${k.key}</span>
+            <button class="icon-btn danger" style="font-size:12px;" onclick="deleteKey(${i})">🗑</button>
+          </div>
+          <div style="font-size:11px;color:#555;">
+            ${k.used 
+              ? '✅ Used - ' + (k.usedBy || 'Unknown') + ' - ' + new Date(k.usedAt).toLocaleDateString()
+              : '🔓 Available - Created ' + new Date(k.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+      `).join('');
+    }
   }
 
   function deleteAccount(i) {
@@ -1484,16 +1634,51 @@
     const user = document.getElementById('newStaffUser').value.trim();
     const rank = document.getElementById('newStaffRank').value;
     if(!user) { showToast('Enter a username'); return; }
-    const tbody = document.getElementById('staffTableBody');
+    
+    // Create staff member object
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const now = new Date();
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escHtml(user)}</td><td><span class="rank-pill">${escHtml(rank)}</span></td><td>${months[now.getMonth()]} ${now.getFullYear()}</td><td><span class="tag green">Active</span></td><td style="display:flex;gap:6px;"><button class="icon-btn">✏ Edit</button><button class="icon-btn danger" onclick="this.closest('tr').remove();updateStaffCount();showToast('Staff member removed')">🗑 Delete</button></td>`;
-    tbody.appendChild(tr);
+    const newStaff = {
+      id: 'staff_' + Date.now(),
+      username: user,
+      rank: rank,
+      joined: months[now.getMonth()] + ' ' + now.getFullYear(),
+      status: 'Active',
+      workspaceId: activeWs
+    };
+    
+    // Add to local data
+    staffData.push(newStaff);
+    localStorage.setItem('ps_staff', JSON.stringify(staffData));
+    
+    // Save to Supabase
+    saveStaffToSupabase(newStaff);
+    
+    // Render the new staff member
+    renderStaffMember(newStaff);
+    
     updateStaffCount();
     closeModal('addStaffModal');
     document.getElementById('newStaffUser').value = '';
     showToast('Staff member added');
+  }
+  
+  function renderStaffMember(s) {
+    const tbody = document.getElementById('staffTableBody');
+    const tr = document.createElement('tr');
+    tr.id = 'staff_' + s.id;
+    tr.innerHTML = `<td>${escHtml(s.username)}</td><td><span class="rank-pill">${escHtml(s.rank)}</span></td><td>${s.joined}</td><td><span class="tag green">${s.status}</span></td><td style="display:flex;gap:6px;"><button class="icon-btn">✏ Edit</button><button class="icon-btn danger" onclick="removeStaff('${s.id}')">🗑 Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+  
+  function removeStaff(id) {
+    staffData = staffData.filter(s => s.id !== id);
+    localStorage.setItem('ps_staff', JSON.stringify(staffData));
+    const el = document.getElementById('staff_' + id);
+    if(el) el.remove();
+    deleteStaffFromSupabase(id);
+    updateStaffCount();
+    showToast('Staff member removed');
   }
 
   // ── Knowledge Base ──
@@ -1513,9 +1698,63 @@
   }
 
   // ── Forms ──
+  // ── Staff data store ──
+  let staffData = JSON.parse(localStorage.getItem('ps_staff') || '[]');
+  
+  // Load staff from Supabase on init
+  async function loadStaffFromSupabase() {
+    if(!supabase) return;
+    try {
+      const { data, error } = await supabase.from('staff').select('*').eq('workspace_id', activeWs);
+      if(error) { console.log('Load staff error:', error); return; }
+      if(data && data.length > 0) {
+        // Merge with local (local takes precedence for conflicts)
+        data.forEach(s => {
+          if(!staffData.find(x => x.id === s.id)) {
+            staffData.push({
+              id: s.id,
+              username: s.username,
+              rank: s.rank,
+              joined: s.joined,
+              status: s.status,
+              workspaceId: s.workspace_id
+            });
+          }
+        });
+        localStorage.setItem('ps_staff', JSON.stringify(staffData));
+      }
+    } catch(e) { console.log('Load staff error:', e); }
+  }
+  
+  // Save staff to Supabase
+  async function saveStaffToSupabase(staff) {
+    if(!supabase) return;
+    try {
+      await supabase.from('staff').upsert({
+        id: staff.id,
+        username: staff.username,
+        rank: staff.rank,
+        joined: staff.joined,
+        status: staff.status,
+        workspace_id: staff.workspaceId || activeWs
+      });
+    } catch(e) { console.log('Save staff error:', e); }
+  }
+  
+  // Delete staff from Supabase
+  async function deleteStaffFromSupabase(id) {
+    if(!supabase) return;
+    try {
+      await supabase.from('staff').delete().eq('id', id);
+    } catch(e) { console.log('Delete staff error:', e); }
+  }
+  
   // ── Forms data store ──
   let formsData = JSON.parse(localStorage.getItem('ps_forms') || '{}');
   let formResponses = JSON.parse(localStorage.getItem('ps_form_responses') || '[]');
+  
+  // ── Keys data store (for workspace creation) ──
+  let wsKeys = JSON.parse(localStorage.getItem('ps_ws_keys') || '[]');
 
   async function renderResponses() {
     const el = document.getElementById('responsesList');
@@ -1695,9 +1934,21 @@
     // Also keep local backup
     formResponses.push({formId, answers, submittedAt: new Date().toISOString()});
     localStorage.setItem('ps_form_responses', JSON.stringify(formResponses));
+    
+    // Award points to workspace owner (1 point per form submission)
+    const wsOwner = psAccounts.find(a => {
+      // Find account that owns this workspace
+      return true; // Award to first account for now
+    });
+    if(wsOwner) {
+      if(!wsOwner.points) wsOwner.points = 0;
+      wsOwner.points += 1; // 1 point per submission
+      localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    }
+    
     document.getElementById('pubFormContent').style.display = 'none';
     document.getElementById('pubFormSuccess').style.display = 'block';
-    showToast('Form submitted!');
+    showToast('Form submitted! (+1 point)');
   }
 
   function deleteForm(id) {
@@ -1991,10 +2242,29 @@
   }
 
   // ── Workspace creation ──
-  function openCreateWs() { openModal('createWsModal'); }
+  function openCreateWs() { 
+    openModal('createWsModal'); 
+  }
   function createWorkspace() {
+    const key = document.getElementById('newWsKey').value.trim();
     const name = document.getElementById('newWsName').value.trim();
+    
+    if(!key) { showToast('Enter a workspace key'); return; }
     if(!name) { showToast('Enter a workspace name'); return; }
+    
+    // Validate key
+    const keyData = wsKeys.find(k => k.key === key && !k.used);
+    if(!keyData) {
+      showToast('Invalid or already used key');
+      return;
+    }
+    
+    // Mark key as used
+    keyData.used = true;
+    keyData.usedAt = new Date().toISOString();
+    keyData.usedBy = name;
+    localStorage.setItem('ps_ws_keys', JSON.stringify(wsKeys));
+    
     const id = 'ws' + Date.now();
     workspaces.push({name, id});
     activeWs = id;
@@ -2002,6 +2272,7 @@
     updateWsView();
     document.getElementById('homeWsName').textContent = '🏠 ' + name;
     closeModal('createWsModal');
+    document.getElementById('newWsKey').value = '';
     document.getElementById('newWsName').value = '';
     document.getElementById('newWsGameId').value = '';
     document.getElementById('newWsDesc').value = '';
