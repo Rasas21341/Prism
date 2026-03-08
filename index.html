@@ -1763,9 +1763,11 @@
   async function saveStaffOrderToSupabase(staffId, order) {
     if(!supabase) return;
     try {
+      const staff = staffData.find(s => s.id === staffId);
       await supabase.from('staff').upsert({
         id: staffId,
-        order: order
+        order: order,
+        workspace_id: staff ? (staff.workspaceId || activeWs) : activeWs
       });
     } catch(e) { console.log('Save order error:', e); }
   }
