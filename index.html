@@ -252,6 +252,10 @@
     .staff-table th { text-align: left; padding: 10px 14px; font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid #1e1e1e; }
     .staff-table td { padding: 12px 14px; font-size: 13.5px; border-bottom: 1px solid #141414; }
     .staff-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .staff-table tr.dragging { opacity: 0.5; background: rgba(61,220,132,0.1); }
+    .staff-table tr.drag-over { border-top: 2px solid #3ddc84; }
+    .drag-handle { cursor: grab; color: #555; font-size: 14px; }
+    .drag-handle:active { cursor: grabbing; color: #3ddc84; }
     .rank-pill { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(61,220,132,0.12); color: #3ddc84; font-weight: 600; }
 
     /* activity */
@@ -787,7 +791,7 @@
         </div>
         <table class="staff-table">
           <thead>
-            <tr><th>Username</th><th>Rank</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+            <tr><th style="width:40px;"></th><th>Username</th><th>Rank</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody id="staffTableBody">
           </tbody>
@@ -1337,6 +1341,8 @@
     if(!tbody) return;
     tbody.innerHTML = '';
     const wsStaff = staffData.filter(s => s.workspaceId === activeWs);
+    // Sort by order field if it exists, otherwise by join date
+    wsStaff.sort((a, b) => (a.order || 999) - (b.order || 999));
     wsStaff.forEach(s => renderStaffMember(s));
     updateStaffCount();
   }
@@ -1667,8 +1673,88 @@
     const tbody = document.getElementById('staffTableBody');
     const tr = document.createElement('tr');
     tr.id = 'staff_' + s.id;
-    tr.innerHTML = `<td>${escHtml(s.username)}</td><td><span class="rank-pill">${escHtml(s.rank)}</span></td><td>${s.joined}</td><td><span class="tag green">${s.status}</span></td><td style="display:flex;gap:6px;"><button class="icon-btn">✏ Edit</button><button class="icon-btn danger" onclick="removeStaff('${s.id}')">🗑 Delete</button></td>`;
+    tr.draggable = true;
+    tr.dataset.staffId = s.id;
+    tr.innerHTML = `<td><span class="drag-handle">☰</span></td><td>${escHtml(s.username)}</td><td><span class="rank-pill">${escHtml(s.rank)}</span></td><td>${s.joined}</td><td><span class="tag green">${s.status}</span></td><td style="display:flex;gap:6px;"><button class="icon-btn">✏ Edit</button><button class="icon-btn danger" onclick="removeStaff('${s.id}')">🗑 Delete</button></td>`;
+    
+    // Add drag event listeners
+    tr.addEventListener('dragstart', handleDragStart);
+    tr.addEventListener('dragend', handleDragEnd);
+    tr.addEventListener('dragover', handleDragOver);
+    tr.addEventListener('dragenter', handleDragEnter);
+    tr.addEventListener('dragleave', handleDragLeave);
+    tr.addEventListener('drop', handleDrop);
+    
     tbody.appendChild(tr);
+  }
+
+  // Drag and drop handlers for staff table
+  let draggedStaffId = null;
+
+  function handleDragStart(e) {
+    draggedStaffId = this.dataset.staffId;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    document.querySelectorAll('.staff-table tr').forEach(tr => tr.classList.remove('drag-over'));
+    draggedStaffId = null;
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDragEnter(e) {
+    e.preventDefault();
+    if (this !== document.querySelector('.dragging')) {
+      this.classList.add('drag-over');
+    }
+  }
+
+  function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    
+    if (draggedStaffId && this.dataset.staffId !== draggedStaffId) {
+      const tbody = document.getElementById('staffTableBody');
+      const rows = Array.from(tbody.querySelectorAll('tr[data-staff-id]'));
+      
+      const draggedIndex = rows.findIndex(r => r.dataset.staffId === draggedStaffId);
+      const targetIndex = rows.findIndex(r => r.dataset.staffId === this.dataset.staffId);
+      
+      if (draggedIndex < targetIndex) {
+        tbody.insertBefore(document.querySelector(`tr[data-staff-id="${draggedStaffId}"]`), this.nextSibling);
+      } else {
+        tbody.insertBefore(document.querySelector(`tr[data-staff-id="${draggedStaffId}"]`), this);
+      }
+      
+      // Update order in staffData
+      updateStaffOrder();
+    }
+  }
+
+  function updateStaffOrder() {
+    const tbody = document.getElementById('staffTableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr[data-staff-id]'));
+    
+    rows.forEach((row, index) => {
+      const staffId = row.dataset.staffId;
+      const staff = staffData.find(s => s.id === staffId);
+      if (staff) {
+        staff.order = index;
+      }
+    });
+    
+    localStorage.setItem('ps_staff', JSON.stringify(staffData));
+    showToast('Staff order updated');
   }
   
   function removeStaff(id) {
