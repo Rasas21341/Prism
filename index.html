@@ -1236,6 +1236,8 @@
     const acc = {name, email, password: pass, points: 50}; // Start with 50 points
     psAccounts.push(acc);
     localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    // Save to Supabase
+    saveAccountToSupabase(acc);
     psCurrentUser = acc;
     localStorage.setItem('ps_current_user', JSON.stringify(acc));
     errEl.style.display = 'none';
@@ -1252,6 +1254,60 @@
       localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
     }
   })();
+
+  // Save account to Supabase
+  async function saveAccountToSupabase(acc) {
+    if(!supabase) {
+      console.log('Supabase not connected');
+      return;
+    }
+    try {
+      const { error } = await supabase.from('accounts').upsert({
+        id: acc.email, // Use email as ID for accounts
+        name: acc.name,
+        email: acc.email,
+        password: acc.password,
+        role: acc.role || 'User',
+        points: acc.points || 0
+      });
+      if(error) {
+        console.log('Save account error:', error);
+      } else {
+        console.log('Account saved to Supabase:', acc.email);
+      }
+    } catch(e) { console.log('Save account error:', e); }
+  }
+
+  // Delete account from Supabase
+  async function deleteAccountFromSupabase(email) {
+    if(!supabase) return;
+    try {
+      await supabase.from('accounts').delete().eq('email', email);
+    } catch(e) { console.log('Delete account error:', e); }
+  }
+
+  // Load accounts from Supabase
+  async function loadAccountsFromSupabase() {
+    if(!supabase) return;
+    try {
+      const { data, error } = await supabase.from('accounts').select('*');
+      if(error) { console.log('Load accounts error:', error); return; }
+      if(data && data.length > 0) {
+        data.forEach(acc => {
+          if(!psAccounts.find(a => a.email === acc.email)) {
+            psAccounts.push({
+              name: acc.name,
+              email: acc.email,
+              password: acc.password,
+              role: acc.role,
+              points: acc.points
+            });
+          }
+        });
+        localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+      }
+    } catch(e) { console.log('Load accounts error:', e); }
+  }
 
   function afterLogin() {
     document.getElementById('navAccount').textContent = psCurrentUser.name;
@@ -1426,6 +1482,8 @@
   function setAccountRole(i, role) {
     psAccounts[i].role = role;
     localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    // Save to Supabase
+    saveAccountToSupabase(psAccounts[i]);
     renderStaffDash();
     showToast('Role updated');
   }
@@ -1435,6 +1493,8 @@
     psAccounts[i].points += amount;
     if(psAccounts[i].points < 0) psAccounts[i].points = 0;
     localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
+    // Save to Supabase
+    saveAccountToSupabase(psAccounts[i]);
     // Update current user if it's the same account
     if(psCurrentUser.email === psAccounts[i].email) {
       psCurrentUser.points = psAccounts[i].points;
@@ -1761,14 +1821,23 @@
 
   // Save staff order to Supabase
   async function saveStaffOrderToSupabase(staffId, order) {
-    if(!supabase) return;
+    if(!supabase) {
+      console.log('Supabase not connected');
+      return;
+    }
     try {
       const staff = staffData.find(s => s.id === staffId);
-      await supabase.from('staff').upsert({
+      const wsId = staff ? (staff.workspaceId || activeWs) : activeWs;
+      const { error } = await supabase.from('staff').upsert({
         id: staffId,
         order: order,
-        workspace_id: staff ? (staff.workspaceId || activeWs) : activeWs
+        workspace_id: wsId
       });
+      if(error) {
+        console.log('Save order error:', error);
+      } else {
+        console.log('Order saved for staff:', staffId);
+      }
     } catch(e) { console.log('Save order error:', e); }
   }
   
