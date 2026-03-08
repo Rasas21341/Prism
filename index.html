@@ -352,9 +352,9 @@
     </ul>
   </div>
     <ul class="nav-right" id="navRight">
-      <li id="navCreateTicket" style="display:none;"><a href="#" onclick="openTicketFromNav();return false;">🎫 Create Ticket</a></li>
       <li><a href="#" onclick="showPage('wsPicker');return false;">Workspaces</a></li>
       <li id="navStaffDash" style="display:none;"><a href="#" onclick="showPage('staffDash');return false;" style="color:#3ddc84;">Staff Dashboard</a></li>
+      <li id="navCreateTicket" style="display:none;"><a href="#" onclick="openTicketFromNav();return false;">🎫 Create Ticket</a></li>
       <li><a href="#" id="navAccount">Account</a></li>
       <li><a href="#" onclick="signOut();return false;">Sign Out</a></li>
     </ul>
@@ -2530,8 +2530,16 @@
   let activeTicketId = null;
 
   function openTicketFromNav() {
-    // First navigate to the tickets channel in the workspace
+    // If no workspace is open, prompt to select one
+    if(!activeWs) {
+      showPage('wsPicker');
+      showToast('Please select a workspace first');
+      return;
+    }
+    
+    // Navigate to the tickets channel in the workspace
     showPage('ws');
+    
     // Switch to tickets channel
     setTimeout(() => {
       const ticketsItem = document.getElementById('sb-tickets');
