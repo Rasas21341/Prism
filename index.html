@@ -401,17 +401,7 @@
       </div>
     </div>
     
-    <!-- Points Management Section -->
-    <div style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:24px;margin-bottom:28px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="font-size:16px;font-weight:700;">💰 Points Management</div>
-        <button class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="addPointsToAll()">+ Add 10 Points to All</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;" id="dashPointsList">
-        <!-- Points will be rendered here -->
-      </div>
-    </div>
-    
+
     <div style="font-size:16px;font-weight:700;margin-bottom:14px;">All Workspaces</div>
     <div id="dashWsList" style="display:flex;flex-direction:column;gap:10px;"></div>
     <div style="font-size:16px;font-weight:700;margin:28px 0 14px;">Registered Accounts</div>
@@ -1261,7 +1251,7 @@
     if(pass.length < 6) { errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
     if(pass !== confirm) { errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
     if(psAccounts.find(a => a.email === email)) { errEl.textContent='An account with this email already exists.'; errEl.style.display='block'; return; }
-    const acc = {name, email, password: pass, points: 50}; // Start with 50 points
+    const acc = {name, email, password: pass};
     psAccounts.push(acc);
     localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
     // Save to Supabase
@@ -1278,7 +1268,7 @@
   (function seedAdmin() {
     const exists = psAccounts.find(a => a.email === ADMIN_EMAIL);
     if(!exists) {
-      psAccounts.push({name: 'OceanviewRP Admin', email: ADMIN_EMAIL, password: '123456', role: 'Admin', points: 1000});
+      psAccounts.push({name: 'OceanviewRP Admin', email: ADMIN_EMAIL, password: '123456', role: 'Admin'});
       localStorage.setItem('ps_accounts', JSON.stringify(psAccounts));
     }
   })();
@@ -1295,8 +1285,7 @@
         name: acc.name,
         email: acc.email,
         password: acc.password,
-        role: acc.role || 'User',
-        points: acc.points || 0
+        role: acc.role || 'User'
       });
       if(error) {
         console.log('Save account error:', error);
@@ -1327,8 +1316,7 @@
               name: acc.name,
               email: acc.email,
               password: acc.password,
-              role: acc.role,
-              points: acc.points
+              role: acc.role
             });
           }
         });
@@ -1341,15 +1329,22 @@
   async function saveWorkspacesToSupabase() {
     if(!supabase || !psCurrentUser) return;
     try {
-      const { error } = await supabase.from('workspaces').upsert({
-        id: psCurrentUser.email + '_workspaces',
-        user_email: psCurrentUser.email,
-        workspaces: JSON.stringify(workspaces)
-      });
-      if(error) {
-        console.log('Save workspaces error:', error);
-      } else {
-        console.log('Workspaces saved to Supabase for:', psCurrentUser.email);
+      // Delete old workspaces for this user
+      await supabase.from('workspaces').delete().eq('user_email', psCurrentUser.email);
+      
+      // Insert all current workspaces
+      if(workspaces.length > 0) {
+        const wsData = workspaces.map(ws => ({
+          id: ws.id,
+          user_email: psCurrentUser.email,
+          name: ws.name
+        }));
+        const { error } = await supabase.from('workspaces').insert(wsData);
+        if(error) {
+          console.log('Save workspaces error:', error);
+        } else {
+          console.log('Workspaces saved to Supabase for:', psCurrentUser.email);
+        }
       }
     } catch(e) { console.log('Save workspaces error:', e); }
   }
@@ -1358,10 +1353,10 @@
   async function loadWorkspacesFromSupabase() {
     if(!supabase || !psCurrentUser) return [];
     try {
-      const { data, error } = await supabase.from('workspaces').select('*').eq('user_email', psCurrentUser.email);
+      const { data, error } = await supabase.from('workspaces').select('id, name').eq('user_email', psCurrentUser.email);
       if(error) { console.log('Load workspaces error:', error); return []; }
       if(data && data.length > 0) {
-        return JSON.parse(data[0].workspaces || '[]');
+        return data.map(row => ({ id: row.id, name: row.name }));
       }
       return [];
     } catch(e) { console.log('Load workspaces error:', e); return []; }
