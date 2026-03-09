@@ -1337,14 +1337,44 @@
     } catch(e) { console.log('Load accounts error:', e); }
   }
 
-  function afterLogin() {
+  // Save workspace to Supabase
+  async function saveWorkspacesToSupabase() {
+    if(!supabase || !psCurrentUser) return;
+    try {
+      const { error } = await supabase.from('workspaces').upsert({
+        id: psCurrentUser.email + '_workspaces',
+        user_email: psCurrentUser.email,
+        workspaces: JSON.stringify(workspaces)
+      });
+      if(error) {
+        console.log('Save workspaces error:', error);
+      } else {
+        console.log('Workspaces saved to Supabase for:', psCurrentUser.email);
+      }
+    } catch(e) { console.log('Save workspaces error:', e); }
+  }
+
+  // Load workspaces from Supabase
+  async function loadWorkspacesFromSupabase() {
+    if(!supabase || !psCurrentUser) return [];
+    try {
+      const { data, error } = await supabase.from('workspaces').select('*').eq('user_email', psCurrentUser.email);
+      if(error) { console.log('Load workspaces error:', error); return []; }
+      if(data && data.length > 0) {
+        return JSON.parse(data[0].workspaces || '[]');
+      }
+      return [];
+    } catch(e) { console.log('Load workspaces error:', e); return []; }
+  }
+
+  async function afterLogin() {
     document.getElementById('navAccount').textContent = psCurrentUser.name;
     // Show Staff Dashboard link only for admin
     document.getElementById('navStaffDash').style.display =
       psCurrentUser.email === ADMIN_EMAIL ? 'list-item' : 'none';
     // Show Create Ticket button for logged in users
     document.getElementById('navCreateTicket').style.display = 'list-item';
-    loadUserWorkspaces();
+    await loadUserWorkspaces();
     showPage('wsPicker');
   }
 
@@ -1365,17 +1395,30 @@
   let workspaces = [];
   let activeWs = null;
   
-  function loadUserWorkspaces() {
+  async function loadUserWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
-    workspaces = JSON.parse(localStorage.getItem(userKey) || '[]');
+    
+    // Try loading from Supabase first
+    let sbWorkspaces = await loadWorkspacesFromSupabase();
+    
+    // If found in Supabase, use those; otherwise fall back to localStorage
+    if(sbWorkspaces && sbWorkspaces.length > 0) {
+      workspaces = sbWorkspaces;
+    } else {
+      workspaces = JSON.parse(localStorage.getItem(userKey) || '[]');
+    }
+    
     activeWs = workspaces.length ? workspaces[0].id : null;
   }
 
   function saveWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
+    // Save to localStorage
     localStorage.setItem(userKey, JSON.stringify(workspaces));
+    // Also save to Supabase
+    saveWorkspacesToSupabase();
   }
   let bans = [];
   let currentMsgChannel = '#general';
