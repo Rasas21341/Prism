@@ -1344,6 +1344,7 @@
       psCurrentUser.email === ADMIN_EMAIL ? 'list-item' : 'none';
     // Show Create Ticket button for logged in users
     document.getElementById('navCreateTicket').style.display = 'list-item';
+    loadUserWorkspaces();
     showPage('wsPicker');
   }
 
@@ -1361,11 +1362,20 @@
   }
 
   // ── State ──
-  let workspaces = JSON.parse(localStorage.getItem('ps_workspaces') || '[]');
-  let activeWs = workspaces.length ? workspaces[0].id : null;
+  let workspaces = [];
+  let activeWs = null;
+  
+  function loadUserWorkspaces() {
+    if(!psCurrentUser) return;
+    const userKey = 'ps_workspaces_' + psCurrentUser.email;
+    workspaces = JSON.parse(localStorage.getItem(userKey) || '[]');
+    activeWs = workspaces.length ? workspaces[0].id : null;
+  }
 
   function saveWorkspaces() {
-    localStorage.setItem('ps_workspaces', JSON.stringify(workspaces));
+    if(!psCurrentUser) return;
+    const userKey = 'ps_workspaces_' + psCurrentUser.email;
+    localStorage.setItem(userKey, JSON.stringify(workspaces));
   }
   let bans = [];
   let currentMsgChannel = '#general';
