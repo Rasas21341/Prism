@@ -1412,13 +1412,13 @@
     activeWs = workspaces.length ? workspaces[0].id : null;
   }
 
-  function saveWorkspaces() {
+  async function saveWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
     // Save to localStorage
     localStorage.setItem(userKey, JSON.stringify(workspaces));
     // Also save to Supabase
-    saveWorkspacesToSupabase();
+    await saveWorkspacesToSupabase();
   }
   let bans = [];
   let currentMsgChannel = '#general';
@@ -2532,7 +2532,7 @@
   function openCreateWs() { 
     openModal('createWsModal'); 
   }
-  function createWorkspace() {
+  async function createWorkspace() {
     const key = document.getElementById('newWsKey').value.trim();
     const name = document.getElementById('newWsName').value.trim();
     
@@ -2555,7 +2555,7 @@
     const id = 'ws' + Date.now();
     workspaces.push({name, id});
     activeWs = id;
-    saveWorkspaces();
+    await saveWorkspaces();
     updateWsView();
     document.getElementById('homeWsName').textContent = '🏠 ' + name;
     closeModal('createWsModal');
@@ -2569,11 +2569,11 @@
   }
 
   // ── Settings ──
-  function saveSettings() {
+  async function saveSettings() {
     const name = document.getElementById('settingsWsName').value.trim();
     if(name) {
       const ws = workspaces.find(w => w.id === activeWs);
-      if(ws) { ws.name = name; saveWorkspaces(); renderWsTabs(); document.getElementById('homeWsName').textContent = '🏠 ' + name; }
+      if(ws) { ws.name = name; await saveWorkspaces(); renderWsTabs(); document.getElementById('homeWsName').textContent = '🏠 ' + name; }
     }
     showToast('Settings saved');
   }
