@@ -1327,10 +1327,14 @@
 
   // Save workspace to Supabase
   async function saveWorkspacesToSupabase() {
-    if(!supabase || !psCurrentUser) return;
+    if(!supabase || !psCurrentUser) {
+      console.log('Supabase not ready or user not logged in');
+      return;
+    }
     try {
-      // Delete old workspaces for this user
-      await supabase.from('workspaces').delete().eq('user_email', psCurrentUser.email);
+      // Delete old workspaces for this user first
+      const { error: delError } = await supabase.from('workspaces').delete().eq('user_email', psCurrentUser.email);
+      if(delError) console.log('Delete error (not critical):', delError);
       
       // Insert all current workspaces
       if(workspaces.length > 0) {
@@ -1343,8 +1347,10 @@
         if(error) {
           console.log('Save workspaces error:', error);
         } else {
-          console.log('Workspaces saved to Supabase for:', psCurrentUser.email);
+          console.log('✓ Workspaces saved to Supabase:', wsData.length, 'workspaces for', psCurrentUser.email);
         }
+      } else {
+        console.log('No workspaces to save');
       }
     } catch(e) { console.log('Save workspaces error:', e); }
   }
