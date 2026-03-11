@@ -1175,6 +1175,22 @@
       try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log('Supabase connected');
+        
+        // If user is already logged in from previous session, load their workspaces
+        if(psCurrentUser) {
+          console.log('User logged in, loading workspaces...');
+          loadUserWorkspaces().then(() => {
+            console.log('Workspaces loaded on page init:', workspaces.length);
+            // Restore the workspace UI if there are workspaces
+            if(workspaces.length > 0 && activeWs) {
+              const ws = workspaces.find(w => w.id === activeWs);
+              if(ws) {
+                document.getElementById('homeWsName').textContent = '🏠 ' + ws.name;
+                showPage('ws');
+              }
+            }
+          });
+        }
       } catch(e) { console.log('Supabase init error:', e); }
     }
   }
@@ -1399,6 +1415,7 @@
   async function loadUserWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
+    const activeWsKey = 'ps_active_ws_' + psCurrentUser.email;
     
     // Try loading from Supabase first
     let sbWorkspaces = await loadWorkspacesFromSupabase();
@@ -1410,14 +1427,25 @@
       workspaces = JSON.parse(localStorage.getItem(userKey) || '[]');
     }
     
-    activeWs = workspaces.length ? workspaces[0].id : null;
+    // Restore active workspace from localStorage
+    const savedActiveWs = localStorage.getItem(activeWsKey);
+    if(savedActiveWs && workspaces.find(w => w.id === savedActiveWs)) {
+      activeWs = savedActiveWs;
+    } else {
+      activeWs = workspaces.length ? workspaces[0].id : null;
+    }
   }
 
   async function saveWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
+    const activeWsKey = 'ps_active_ws_' + psCurrentUser.email;
     // Save to localStorage
     localStorage.setItem(userKey, JSON.stringify(workspaces));
+    // Save active workspace to localStorage
+    if(activeWs) {
+      localStorage.setItem(activeWsKey, activeWs);
+    }
     // Also save to Supabase
     await saveWorkspacesToSupabase();
   }
