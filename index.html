@@ -2932,6 +2932,11 @@
       }
       showPage('wsPicker');
     })();
+  } else {
+    // Try loading accounts and workspaces from Supabase for login
+    (async () => {
+      await loadAccountsFromSupabase();
+    })();
   }
   // else authPage stays active (default)
 </script>
