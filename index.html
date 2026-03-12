@@ -1175,22 +1175,6 @@
       try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log('Supabase connected');
-        
-        // If user is already logged in from previous session, load their workspaces
-        if(psCurrentUser) {
-          console.log('User logged in, loading workspaces...');
-          loadUserWorkspaces().then(() => {
-            console.log('Workspaces loaded on page init:', workspaces.length);
-            // Restore the workspace UI if there are workspaces
-            if(workspaces.length > 0 && activeWs) {
-              const ws = workspaces.find(w => w.id === activeWs);
-              if(ws) {
-                document.getElementById('homeWsName').textContent = '🏠 ' + ws.name;
-                showPage('ws');
-              }
-            }
-          });
-        }
       } catch(e) { console.log('Supabase init error:', e); }
     }
   }
@@ -1229,8 +1213,16 @@
   }
 
   // ── Auth ──
+  // Restore session from localStorage if exists
+  let psCurrentUser = null;
+  try {
+    const savedUser = localStorage.getItem('ps_current_user');
+    psCurrentUser = savedUser ? JSON.parse(savedUser) : null;
+  } catch(e) {
+    console.log('Error restoring session:', e);
+    localStorage.removeItem('ps_current_user');
+  }
   let psAccounts = JSON.parse(localStorage.getItem('ps_accounts') || '[]');
-  let psCurrentUser = JSON.parse(localStorage.getItem('ps_current_user') || 'null');
 
   function showAuthTab(tab) {
     document.getElementById('loginForm').style.display  = tab === 'login'  ? 'block' : 'none';
@@ -1415,7 +1407,6 @@
   async function loadUserWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
-    const activeWsKey = 'ps_active_ws_' + psCurrentUser.email;
     
     // Try loading from Supabase first
     let sbWorkspaces = await loadWorkspacesFromSupabase();
@@ -1427,25 +1418,14 @@
       workspaces = JSON.parse(localStorage.getItem(userKey) || '[]');
     }
     
-    // Restore active workspace from localStorage
-    const savedActiveWs = localStorage.getItem(activeWsKey);
-    if(savedActiveWs && workspaces.find(w => w.id === savedActiveWs)) {
-      activeWs = savedActiveWs;
-    } else {
-      activeWs = workspaces.length ? workspaces[0].id : null;
-    }
+    activeWs = workspaces.length ? workspaces[0].id : null;
   }
 
   async function saveWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
-    const activeWsKey = 'ps_active_ws_' + psCurrentUser.email;
     // Save to localStorage
     localStorage.setItem(userKey, JSON.stringify(workspaces));
-    // Save active workspace to localStorage
-    if(activeWs) {
-      localStorage.setItem(activeWsKey, activeWs);
-    }
     // Also save to Supabase
     await saveWorkspacesToSupabase();
   }
@@ -2939,11 +2919,19 @@
     document.getElementById('navAccount').textContent = psCurrentUser.name;
     document.getElementById('navStaffDash').style.display =
       psCurrentUser.email === ADMIN_EMAIL ? 'list-item' : 'none';
-    if(workspaces.length && activeWs) {
-      const ws = workspaces.find(w => w.id === activeWs);
-      if(ws) document.getElementById('homeWsName').textContent = '🏠 ' + ws.name;
-    }
-    showPage('wsPicker');
+    document.getElementById('navCreateTicket').style.display = 'list-item';
+    // Load workspaces for restored session
+    (async () => {
+      await loadUserWorkspaces();
+      if(workspaces.length && activeWs) {
+        const ws = workspaces.find(w => w.id === activeWs);
+        if(ws) {
+          const homeWsNameEl = document.getElementById('homeWsName');
+          if(homeWsNameEl) homeWsNameEl.textContent = '🏠 ' + ws.name;
+        }
+      }
+      showPage('wsPicker');
+    })();
   }
   // else authPage stays active (default)
 </script>
