@@ -1164,8 +1164,8 @@
   .role-color-opt.selected { border-color:#fff; }
 </style>
 
-  <!-- Supabase JS Library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase JS Library -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
   // ── Supabase Setup ──
@@ -1174,11 +1174,14 @@
   let supabase = null;
 
   function initSupabase() {
+    console.log('Initializing Supabase, window.supabase:', typeof window.supabase);
     if(typeof window.supabase !== 'undefined') {
       try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log('Supabase connected');
       } catch(e) { console.log('Supabase init error:', e); }
+    } else {
+      console.log('Supabase library not loaded');
     }
   }
 
