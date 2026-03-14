@@ -1164,6 +1164,9 @@
   .role-color-opt.selected { border-color:#fff; }
 </style>
 
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
   // ── Supabase Setup ──
   const SUPABASE_URL = 'https://xzyqwkqaqtfwxalnqckb.supabase.co';
@@ -1232,7 +1235,6 @@
   }
 
   function doLogin() {
-    alert('Login clicked');
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const pass  = document.getElementById('loginPassword').value;
     const errEl = document.getElementById('loginError');
@@ -1407,15 +1409,21 @@
   async function loadUserWorkspaces() {
     if(!psCurrentUser) return;
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
+    console.log('Loading workspaces for:', psCurrentUser.email);
     
     // Try loading from Supabase first
     let sbWorkspaces = await loadWorkspacesFromSupabase();
     
     // If found in Supabase, use those; otherwise fall back to localStorage
     if(sbWorkspaces && sbWorkspaces.length > 0) {
+      console.log('Loaded from Supabase:', sbWorkspaces.length, 'workspaces');
       workspaces = sbWorkspaces;
     } else {
-      workspaces = JSON.parse(localStorage.getItem(userKey) || '[]');
+      // Fall back to localStorage
+      const localData = localStorage.getItem(userKey);
+      console.log('LocalStorage key:', userKey, 'Data:', localData);
+      workspaces = JSON.parse(localData || '[]');
+      console.log('Loaded from localStorage:', workspaces.length, 'workspaces');
     }
     
     activeWs = workspaces.length ? workspaces[0].id : null;
@@ -1426,6 +1434,7 @@
     const userKey = 'ps_workspaces_' + psCurrentUser.email;
     // Save to localStorage
     localStorage.setItem(userKey, JSON.stringify(workspaces));
+    console.log('Saved workspaces to localStorage:', workspaces.length, 'for key:', userKey);
     // Also save to Supabase
     await saveWorkspacesToSupabase();
   }
